@@ -62,6 +62,7 @@ See https://support.10xgenomics.com/single-cell-gene-expression/software/pipelin
 
 example: 
 | id | name | read | pattern | sequence | feature_type | 
+| --- | --- | --- | --- | --- | --- | 
 | CD235a | CD235a | R2 | ^(BC) | AGAGTATGTATGGGA | Antibody Capture | 
 | CD33 | CD33 | R2 | ^(BC) | TAACTCAGGGCCTAT | Antibody Capture | 
 | CD71 | CD71 | R2 | ^(BC) | CCGTGTTCCTCATTA | Antibody Capture | 
