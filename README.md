@@ -1,5 +1,5 @@
 # ctg-sc-adt-rna-10x 
-## Nextflow pipeline for preprocessing of 10x chromium cite-seq with rna+adt data with cellranger. 
+## Nextflow pipeline for processing of 10x chromium cite-seq with rna+adt data with cellranger. 
 
 - Only needs one samplesheet with description of each sample, and the feature.csv list with antibody tags  
 - Supports mm10 and hg38 references, but can also be run with custom reference genome and annotation (must be added via nextflow.config). See custom genome below.
