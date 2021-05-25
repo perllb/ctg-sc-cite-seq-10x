@@ -110,7 +110,7 @@ If custom genome (not hg38 or mm10) is used
 
 Example:
  | Sample_ID | index | Sample_Project | Sample_Species | Sample_Lib | Sample_Pair | 
- | --- | --- | --- | --- | --- | --- | --- | --- |
+ | --- | --- | --- | --- | --- | --- | 
  | Sr1 | SI-GA-D9 | proj_2021_012 | **custom** | rna | 1 |
  | Sr2 | SI-GA-H9 | proj_2021_012 | **custom** | rna | 2 |
  | Sadt1 | SI-GA-C9 | proj_2021_013 | **custom** | adt | 1 |
