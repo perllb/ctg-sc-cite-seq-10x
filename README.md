@@ -1,16 +1,10 @@
 # ctg-sc-adt-rna-10x 
 ## Nextflow pipeline for processing of 10x chromium cite-seq with rna+adt data with cellranger. 
 
-- Only needs one samplesheet with description of each sample, and the feature.csv list with antibody tags  
-- Supports mm10 and hg38 references, but can also be run with custom reference genome and annotation (must be added via nextflow.config). See custom genome below.
-- Must be run project-wise (one project (rna+adt) per run)
-
-## USAGE
-
-1. For reproducibility, create a project / run directory in which you clone this repository, containing the nextflow.config, nf-pipeline, bin
-2. Clone and build the Singularity container for this pipeline: https://github.com/perllb/ctg-sc-adt-rna-10x/tree/master/container/sc-adt-rna-10x.v6
-3. Edit the nextflow.config file to fit your project and system. Set current directory as `basedir`. (from where you execute the pipeline).
-4. Edit your samplesheet to match the example samplesheet. See section `SampleSheet` below
+1. Clone and build the Singularity container for this pipeline: https://github.com/perllb/ctg-sc-adt-rna-10x/tree/master/container/sc-adt-rna-10x.v6
+2. Prepare the `feature ref` csv. See section `Feature reference` below
+3. Edit your samplesheet to match the example samplesheet. See section `SampleSheet` below
+4. Edit the nextflow.config file to fit your project and system. 
 5. Run pipeline 
 ```
 nohup nextflow run pipe-sc-adt-rna-10x.nf > log.pipe-sc-adt-rna-10x.txt &
@@ -19,7 +13,7 @@ nohup nextflow run pipe-sc-adt-rna-10x.nf > log.pipe-sc-adt-rna-10x.txt &
 ## Input
 
 - Samplesheet (see `SampleSheet` section below)
-- feature.tags.csv (see `Feature tags` section below)
+- Feature reference csv (see `Feature Reference` section below)
 
 ## Pipeline steps:
 
@@ -55,7 +49,7 @@ Cellranger version: cellranger v6.0
 - Sample_Lib : 'rna'/'adt'
 - Sample_Pair : To match the rna sample with the corresponding adt sample. e.g. in the example above, sample 'Sr1' is the rna library, that should be matched with 'Sadt1' which is the adt library of the sample
 
-## Feature tags
+## Feature reference
 csv that declares the molecule structure and unique Feature Barcode sequence of each feature present in your experiment 
 
 See https://support.10xgenomics.com/single-cell-gene-expression/software/pipelines/latest/using/feature-bc-analysis for more info
