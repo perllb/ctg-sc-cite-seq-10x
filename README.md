@@ -119,4 +119,3 @@ Use the `ctg-cellranger-add2ref` script.
 
 https://github.com/perllb/ctg-cellranger-add2ref
 
-
