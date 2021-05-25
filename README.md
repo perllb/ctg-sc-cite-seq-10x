@@ -50,10 +50,9 @@ Cellranger version: cellranger v6.0
 
 ## Samplesheet requirements:
 
-Note: no header! only the rows shown below, starting with the column names.
 
  | Sample_ID | index | Sample_Project | Sample_Species | Sample_Lib | Sample_Pair | 
- | --- | --- | --- | --- | --- | --- | --- | --- |
+ | --- | --- | --- | --- | --- | --- | 
  | Sr1 | SI-GA-D9 | proj_2021_012 | human | rna | 1 |
  | Sr2 | SI-GA-H9 | proj_2021_012 | human | rna | 2 |
  | Sadt1 | SI-GA-C9 | proj_2021_013 | mouse | adt | 1 |
