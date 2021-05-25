@@ -2,7 +2,7 @@
 ## Nextflow pipeline for processing of 10x chromium cite-seq with rna+adt data with cellranger. 
 
 1. Clone and build the Singularity container for this pipeline: https://github.com/perllb/ctg-sc-adt-rna-10x/tree/master/container/sc-adt-rna-10x.v6
-2. Prepare the `feature ref` csv. See section `Feature reference` below
+2. Prepare the feature ref csv. See section `Feature reference` below
 3. Edit your samplesheet to match the example samplesheet. See section `SampleSheet` below
 4. Edit the nextflow.config file to fit your project and system. 
 5. Run pipeline 
