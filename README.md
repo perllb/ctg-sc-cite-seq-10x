@@ -86,7 +86,7 @@ Add path to .sif in nextflow.config
         * fastqc output (https://www.bioinformatics.babraham.ac.uk/projects/fastqc/)
         * multiqc output: Summarizing FastQC output and demultiplexing (https://multiqc.info/)
     * `fastq`: Contains raw fastq files from cellranger mkfastq.
-    * `count-cr`: Cellranger count output. Here you find gene/cell count matrices, feature quantification, secondary analysis output, and more. Please go to (https://support.10xgenomics.com/single-cell-gene-expression/software/pipelines/latest/using/feature-bc-analysis) for more information on the output files.
+    * `count-cr`: Cellranger count output. Here you find gene/cell count matrices, feature quantification, secondary analysis output, and more. See (https://support.10xgenomics.com/single-cell-gene-expression/software/pipelines/latest/using/feature-bc-analysis) for more information on the output files.
     * `summaries`: 
         * web-summary files which provide an overview of essential metrics from the 10x run. 
         * cloupe files which can be used to explore the data interactively in the Loupe browser (https://support.10xgenomics.com/single-cell-gene-expression/software/visualization/latest/what-is-loupe-cell-browser)  
