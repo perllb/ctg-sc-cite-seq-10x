@@ -50,11 +50,11 @@ Cellranger version: cellranger v6.0
 - Sample_Pair : To match the rna sample with the corresponding adt sample. e.g. in the example above, sample 'Sr1' is the rna library, that should be matched with 'Sadt1' which is the adt library of the sample
 
 ## Feature reference
-csv that declares the molecule structure and unique Feature Barcode sequence of each feature present in your experiment 
+Csv that declares the molecule structure and unique Feature Barcode sequence of each feature present in your experiment 
 
 See https://support.10xgenomics.com/single-cell-gene-expression/software/pipelines/latest/using/feature-bc-analysis for more info
 
-example: 
+Example (TotalSeq A): 
 | id | name | read | pattern | sequence | feature_type | 
 | --- | --- | --- | --- | --- | --- | 
 | CD235a | CD235a | R2 | ^(BC) | AGAGTATGTATGGGA | Antibody Capture | 
