@@ -86,8 +86,8 @@ In nextflow.config, set
 	index_rna = "dual"
 	index_adt = "single"	
 
-2. 
-
+```
+	
 ## Container
 - `sc-adt-rna-10x`: For 10x sc-adt-rna-seq. Based on cellranger v6.
 https://github.com/perllb/ctg-sc-adt-rna-10x/tree/master/container/sc-adt-rna-10x.v6
