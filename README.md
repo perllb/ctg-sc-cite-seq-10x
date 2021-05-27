@@ -1,6 +1,11 @@
 # ctg-sc-adt-rna-10x 
 ## Nextflow pipeline for processing of 10x chromium cite-seq with rna+adt data with cellranger. 
 
+- Analyze 10x cite-seq in one pipeline. 
+- Supports ADT and RNA libraries sequenced on same flowcell.
+- Supports different indexing of RNA and ADT library (e.g. RNA dual and ADT single). See `Handle dual and single indexing in same sequencing run` for more info.
+
+
 1. Clone and build the Singularity container for this pipeline: https://github.com/perllb/ctg-sc-adt-rna-10x/tree/master/container/sc-adt-rna-10x.v6
 2. Prepare the feature ref csv. See section `Feature reference` below
 3. Edit your samplesheet to match the example samplesheet. See section `SampleSheet` below
@@ -66,6 +71,22 @@ Example (TotalSeq A):
 | CD49d | CD49d | R2 | ^(BC) | CCATTCAACTTCCGG | Antibody Capture | 
 | CD45 | CD45 | R2 | ^(BC) | TCCCTTGCGATTTAC | Antibody Capture | 
 
+
+## Handle dual and single indexing in same sequencing run
+
+If your RNA and ADT libraries have different indexing it can be handled as following:
+
+#### RNA dual - ADT single
+In nextflow.config, set 
+```
+// bcl2fastq arguments
+	bcl2fastqarg_rna = "" 
+	bcl2fastqarg_adt = "--use-bases-mask=Y28n*,I6n*,N10,Y90n*" 
+	// Index type ('dual' or 'single')
+	index_rna = "dual"
+	index_adt = "single"	
+
+2. 
 
 ## Container
 - `sc-adt-rna-10x`: For 10x sc-adt-rna-seq. Based on cellranger v6.
