@@ -81,11 +81,11 @@ If your RNA and ADT libraries have different indexing it can be handled as follo
 In nextflow.config, set 
 ```
 // bcl2fastq arguments
-	bcl2fastqarg_rna = "" 
-	bcl2fastqarg_adt = "--use-bases-mask=Y28n*,I6n*,N10,Y90n*" 
-	// Index type ('dual' or 'single')
-	index_rna = "dual"
-	index_adt = "single"	
+bcl2fastqarg_rna = "" 
+bcl2fastqarg_adt = "--use-bases-mask=Y28n*,I6n*,N10,Y90n*" 
+// Index type ('dual' or 'single')
+index_rna = "dual"
+index_adt = "single"	
 
 ```
 	
