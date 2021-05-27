@@ -1,0 +1,9 @@
+id,name,read,pattern,sequence,feature_type
+CD235a,CD235a,R2,^(BC),AGAGTATGTATGGGA,Antibody Capture
+CD33,CD33,R2,^(BC),TAACTCAGGGCCTAT,Antibody Capture
+CD71,CD71,R2,^(BC),CCGTGTTCCTCATTA,Antibody Capture
+CD11b,CD11b,R2,^(BC),GACAAGTGATCTGCA,Antibody Capture
+CD45RA,CD45RA,R2,^(BC),TCAATCCTTCCGCTT,Antibody Capture
+CD34,CD34,R2,^(BC),GCAGAAATCTCCCTT,Antibody Capture
+CD49d,CD49d,R2,^(BC),CCATTCAACTTCCGG,Antibody Capture
+CD45,CD45,R2,^(BC),TCCCTTGCGATTTAC,Antibody Capture
