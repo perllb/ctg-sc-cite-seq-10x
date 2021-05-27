@@ -47,12 +47,13 @@ Cellranger version: cellranger v6.0
 
 - The nf-pipeline takes the following Columns from samplesheet to use in channels:
 
-- Sample_ID : 'Sample_Name' will be ignored
-- index : Must use index ID if dual. For single, index sequence works too.
-- Sample_Project : Project ID
-- Sample_Species : 'human'/'mouse'/'custom' - if custom, see below how to edit the config file
-- Sample_Lib : 'rna'/'adt'
-- Sample_Pair : To match the rna sample with the corresponding adt sample. e.g. in the example above, sample 'Sr1' is the rna library, that should be matched with 'Sadt1' which is the adt library of the sample
+
+- `Sample_ID` : ID of sample. ('Sample_Name' will be ignored)
+- `index` : Must use index ID if dual. For single, index sequence works too.
+- `Sample_Project` : Project ID
+- `Sample_Species` : 'human'/'mouse'/'custom' - if custom, see below how to edit the config file
+- `Sample_Lib` : 'rna'/'adt'
+- `Sample_Pair` : To match the rna sample with the corresponding adt sample. e.g. in the example above, sample 'Sr1' is the rna library, that should be matched with 'Sadt1' which is the adt library of the sample
 
 ## Feature reference
 Csv that declares the molecule structure and unique Feature Barcode sequence of each feature present in your experiment 
