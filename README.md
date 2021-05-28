@@ -2,6 +2,7 @@
 ## Nextflow pipeline for processing of 10x chromium cite-seq with rna+adt data with cellranger. 
 
 - Analyze 10x cite-seq in one pipeline. 
+- Demux -> cellranger -> QC
 - Supports ADT and RNA libraries sequenced on same flowcell.
 - Supports different indexing of RNA and ADT library (e.g. RNA dual and ADT single). See `Handle dual and single indexing in same sequencing run` for more info.
 
