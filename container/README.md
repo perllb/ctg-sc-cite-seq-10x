@@ -1,9 +1,9 @@
 Build container:
 ```
-sudo -E singularity build sc-adt-rna-10x.v6.sif sc-adt-rna-10x.v6-build
+sudo -E singularity build sc-cite-seq-10x.sif sc-cite-seq-10x-builder
 ```
 
 #### Run command with container
 ```
-singularity exec --bind /fs1 sc-adt-rna-10x.v6.sif cellranger count (..arguments..)
+singularity exec --bind /fs1 sc-cite-seq-10x.sif cellranger count (..arguments..)
 ```
