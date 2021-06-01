@@ -1,19 +1,19 @@
-# ctg-sc-adt-rna-10x 
-## Nextflow pipeline for processing of 10x chromium cite-seq with rna+adt data with cellranger. 
+# ctg-sc-cite-seq-10x 
+## Nextflow pipeline for processing of 10x chromium cite-seq with rna+(adt/hto) data with cellranger. 
 
 - Analyze 10x cite-seq in one pipeline. 
 - Demux -> cellranger -> QC
-- Supports ADT and RNA libraries sequenced on same flowcell.
-- Supports different indexing of RNA and ADT library (e.g. RNA dual and ADT single). See `Handle dual and single indexing in same sequencing run` for more info.
+- Supports ADT/HTO and RNA libraries sequenced on same flowcell.
+- Supports different indexing of RNA and ADT/HTO library (e.g. RNA dual and ADT/HTO single). See `Handle dual and single indexing in same sequencing run` for more info.
 
 
-1. Clone and build the Singularity container for this pipeline: https://github.com/perllb/ctg-sc-adt-rna-10x/tree/master/container/sc-adt-rna-10x.v6
+1. Clone and build the Singularity container for this pipeline: https://github.com/perllb/ctg-sc-cite-seq-10x/tree/master/container
 2. Prepare the feature ref csv. See section `Feature reference` below
 3. Edit your samplesheet to match the example samplesheet. See section `SampleSheet` below
 4. Edit the nextflow.config file to fit your project and system. 
 5. Run pipeline 
 ```
-nohup nextflow run pipe-sc-adt-rna-10x.nf > log.pipe-sc-adt-rna-10x.txt &
+nohup nextflow run pipe-sc-cite-seq-10x.nf > log.pipe-sc-cite-seq-10x.txt &
 ```
 
 ## Input
@@ -25,13 +25,13 @@ nohup nextflow run pipe-sc-adt-rna-10x.nf > log.pipe-sc-adt-rna-10x.txt &
 
 Cellranger version: cellranger v6.0 
 
-* `parse samplesheets`: Creates samplesheets (one for RNA, and one for ADT) for demux based on the input samplesheet. 
-* `generate library csv`: Creates library.csv file based on input samplesheet. One .csv per matched RNA and ADT sample.
-* `Demultiplexing` (cellranger mkfastq): Converts raw basecalls to fastq, and demultiplex samples based on index (https://support.10xgenomics.com/single-cell-gene-expression/software/pipelines/6.0/using/mkfastq). Does this separately for RNA and ADT (since they often have different index types (dual/single)
+* `parse samplesheets`: Creates samplesheets (one for RNA, and one for ADT/HTO) for demux based on the input samplesheet. 
+* `generate library csv`: Creates library.csv file based on input samplesheet. One .csv per matched RNA and ADT/HTO sample.
+* `Demultiplexing` (cellranger mkfastq): Converts raw basecalls to fastq, and demultiplex samples based on index (https://support.10xgenomics.com/single-cell-gene-expression/software/pipelines/6.0/using/mkfastq). Does this separately for RNA and ADT/HTO (since they often have different index types (dual/single)
 * `FastQC`: FastQC calculates quality metrics on raw sequencing reads (https://www.bioinformatics.babraham.ac.uk/projects/fastqc/). MultiQC summarizes FastQC reports into one document (https://multiqc.info/).
-* `Align` + `Counts` + `Feature Barcoding` (cellranger count): Aligns fastq files to reference genome, counts genes for each cell/barcode, and quantifies ADT features per barcode - Then performs secondary analysis such as clustering and generates the cloupe files (https://support.10xgenomics.com/single-cell-gene-expression/software/pipelines/latest/using/feature-bc-analysis).
+* `Align` + `Counts` + `Feature Barcoding` (cellranger count): Aligns fastq files to reference genome, counts genes for each cell/barcode, and quantifies ADT/HTO features per barcode - Then performs secondary analysis such as clustering and generates the cloupe files (https://support.10xgenomics.com/single-cell-gene-expression/software/pipelines/latest/using/feature-bc-analysis).
 * `Aggregation` (cellranger aggr): Automatically creates the input csv pointing to molecule_info.h5 files for each sample to be aggregated and executes aggregation (https://support.10xgenomics.com/single-cell-gene-expression/software/pipelines/latest/using/aggregate). 
-* `Cellranger count metrics` (bin/ctg-sc-adt-rna-count-metrics-concat.py): Collects main count metrics (#cells and #reads/cell etc.) from each sample and collect in table (**UPDATE**)
+* `Cellranger count metrics` (bin/ctg-sc-cite-seq-count-metrics-concat.py): Collects main count metrics (#cells and #reads/cell etc.) from each sample and collect in table (**UPDATE**)
 * `multiQC`: Compile fastQC and cellranger count metrics in multiqc report
 * `md5sum`: md5sum of all generated files
 
@@ -76,9 +76,9 @@ Example (TotalSeq A):
 
 ## Handle dual and single indexing in same sequencing run
 
-If your RNA and ADT libraries have different indexing it can be handled as following:
+If your RNA and ADT/HTO libraries have different indexing it can be handled as following:
 
-#### RNA dual - ADT single
+#### RNA dual - ADT/HTO single
 In nextflow.config, set 
 ```
 // bcl2fastq arguments
@@ -91,13 +91,13 @@ index_adt = "single"
 ```
 	
 ## Container
-- `sc-adt-rna-10x`: For 10x sc-adt-rna-seq. Based on cellranger v6.
-https://github.com/perllb/ctg-sc-adt-rna-10x/tree/master/container/sc-adt-rna-10x.v6
+- `sc-cite-seq-10x`: For 10x sc-cite-seq. Based on cellranger v6.
+https://github.com/perllb/ctg-sc-cite-seq-10x/tree/master/container
 
 Build container:
 NOTE: Environment.yml file has to be in current working directory
 ```
-sudo -E singularity build sc-adt-rna-10x.v6.sif sc-adt-rna-10x.v6-build
+sudo -E singularity build sc-cite-seq-10x.sif sc-cite-seq-10x-builder 
 ```
 
 Add path to .sif in nextflow.config
