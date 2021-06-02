@@ -28,11 +28,11 @@ demux = params.demux
 sheet = file(params.sheet)
 
 // create new samplesheet in cellranger mkfastq IEM (--samplesheet) format. This will be used only for demultiplexing
-newsheet_rna = "$metadir/samplesheet.nf.cite-seq-adt-10x.rna.csv"
-newsheet_adt = "$metadir/samplesheet.nf.cite-seq-adt-10x.adt.csv"
+newsheet_rna = "$metadir/samplesheet.nf.sc-cite-seq-adt-10x.rna.csv"
+newsheet_adt = "$metadir/samplesheet.nf.sc-cite-seq-adt-10x.adt.csv"
 
 println "============================="
-println ">>> cite-seq-adt-10x pipeline >>>"
+println ">>> sc-cite-seq-adt-10x pipeline >>>"
 println ""
 println "> INPUT: "
 println ""
@@ -435,12 +435,16 @@ process multiqc_count_run {
 	val "x" into summarized
 
 	"""
-# make copy of adt Stats.json
-cp ${fqdir}/adt/Stats/Stats.json ${fqdir}/adt/Stats/Stats.adt.json
+# Edit adt stats.json to fetch stats in multiqc
+# Get flowcell id
+cd $fqdir/adt/Stats
+flow=\$(grep Flowcell Stats.json | cut -f4 -d\"\\"\")
+sed "s/\$flow/\${flow}_ADT/g" Stats.json > tmp.txt
+mv tmp.txt Stats.json 
 
 cd ${outdir}
 mkdir -p ${qcdir}/multiqc
-multiqc -f ${fqdir} ${qcdir}/fastqc/ ${qcdir}/cellranger/ ${fqdir}/adt/Stats/Stats.adt.json ${fqdir}/rna/Stats/Stats.json --outdir ${qcdir}/multiqc -n ${metaid}_sc-aft-rna-10x_summary_multiqc_report.html
+multiqc -f ${fqdir} ${qcdir}/fastqc/ ${qcdir}/cellranger/ ${fqdir}/adt/Stats/Stats.json ${fqdir}/rna/Stats/Stats.json --outdir ${qcdir}/multiqc -n ${metaid}_sc-aft-rna-10x_summary_multiqc_report.html
 
 cp -r ${qcdir} ${ctgqc}
 
