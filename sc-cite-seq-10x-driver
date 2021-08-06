@@ -1,0 +1,262 @@
+#!/bin/bash
+
+##########################
+# sc-cite-seq-10x driver #
+##########################
+
+### This script will 
+### * Run the sc-cite-seq-10x pipeline on data in current runfolder
+### * Modify standard nextflow.config to project specific 
+### * Generate project folder in shared/ctg-delivery/sc-cite-seq-10x
+###  -> Here it will store nextflow.config, nf-pipeline, samplesheet, feature.ref.csv in ctg-log 
+###  -> Write pipeline output 
+### * nf-Pipeline writes qc to shared/ctg-qc/sc-cite-seq-10x
+
+# Initialize variables
+runfolder=$(pwd)
+run=$(basename $runfolder)
+demux="y"
+resume='n'
+index_rna='dual'
+index_adt='single'
+nostart='n'
+
+# usage message 
+usage() {
+
+    echo ""
+    echo "Usage: sc-cite-seq-10x [ -m META_ID ] [ -s SAMPLESHEET ] [ -f FEATURE-REF-CSV ] [-i INDEX-TYPE-RNA] [ -a INDEX-TYPE-ADT ] [ -b BCL2FASTQ-ARG-ADT ] [ -E BCL2FASTQ-ARG-RNA ] [ -r RESUME ] [ -c CUSTOM-GENOME ] [ -d DEMUX-OFF ] [ -n NO-START ] [ -h HELP ] "  1>&2
+    echo ""
+    echo ""
+    echo "Optional arguments: "
+    echo "META-ID           -m : Set 'meta-id' for run-analysis (e.g. 210330-10x). Default: Takes date of runfolder + run ID in runfolder name and adds sc-cite-seq-10x as suffix. E.g. '210330_A00681_0334_AHWFKTDMXX' becomes 210330_0334-sc-cite-seq-10x "
+    echo "SAMPLESHEET       -s : Set samplesheet used for run (Default: runfolder/CTG_SampleSheet.csv) "
+    echo "FEATURE REF       -f : Set feature ref csv path (Default: runfolder/feature.ref.csv) "
+    echo "INDEX-TYPE-RNA    -i : Set -a if change to single index RNA. (Default: dual) "  
+    echo "INDEX-TYPE-ADT    -a : Set -a if change to dual index uses. (Default: single) "  
+    echo "BCL2FASTQ-ARG-ADT -b : String with bcl2fastq argument for ADT demux. e.g. '--use-bases-mask=Y28n*,I6n*,N10,Y90n*"
+    echo "BCL2FASTQ-ARG-RNA -e : String with bcl2fastq argument for RNA demux. e.g. '--minimum-trimmed-read-length 20 --mask-short-adapter-reads 20' "
+    echo "RESUME            -r : Set if to resume nf-pipeline"
+    echo "CUSTOM-GENOME     -c : Path to custom reference genome if needed. Skip if human/mouse defined in samplesheet "
+    echo "DEMUX-OFF         -d : Set flag to skip mkfastq (then fastq must be in FQDIR) "
+    echo "NO-START          -n : Set -n if you only want to create pipeline directory structure, copy all files to ctg-projects, but not start pipeline. Good if you want to modify config etc manually for this project before starting nextflow."
+    echo "HELP              -h : print help message" 
+   
+}
+
+exit_abnormal() {
+    usage
+    exit 1
+}
+
+# Read and control input arguments 
+while getopts m:f:s:iab:e:rc:dnh opt; do
+    case $opt in
+	m) id=$OPTARG
+	    ;;
+	f) featureref=$OPTARG
+	    ;;
+	s) sheet=$OPTARG
+	    ;;
+	i) index_rna="single"
+	    ;;
+	a) index_adt="dual"
+	    ;;
+	b) b2farg_adt=$OPTARG
+	    ;;
+	e) b2farg_rna=$OPTARG
+	    ;;
+	r) resume="y"
+	    ;;
+	c) custom_genome=$OPTARG
+	    ;;
+	d) demux="n"
+	    ;;
+	n) nostart="y"
+	    ;;
+	h) exit_abnormal
+	    ;;
+	\?) echo "> Error: Invalid option -$OPTARG" >&2
+	    exit_abnormal ;;
+	:) echo "> Error: -${OPTARG} requires an argument: -i needs project-id and -s need samplesheet name! "
+	    exit_abnormal ;;
+    esac
+done
+
+## Check arguments
+shift "$(( OPTIND -1 ))"
+
+# Check meta-id
+if [ -z $id ]; then
+    echo ""; echo "> No meta-ID specified"
+    metaid=$(echo $run | cut -f1,3 -d"_")
+    id="${metaid}-sc-cite-seq-10x"
+    echo "- Using: '${id}'"
+fi
+
+# Check if meta-ID already exist
+if [ "$resume" == 'n' ] && [ -d /projects/fs1/shared/ctg-projects/sc-cite-seq-10x/$id ]; then
+    # Prompt user to approve overwriting current sc-cite-seq-10x project-folder
+    read -p "> WARNING: $id has been used before:
+
+The following directories already exist:
+- /projects/fs1/shared/ctg-projects/sc-cite-seq-10x/$id 
+- /projects/fs1/shared/ctg-qc/sc-cite-seq-10x/$id 
+- /projects/fs1/nas-sync/ctg-delivery/sc-cite-seq-10x/$id 
+
+
+ Do you want to overwrite these folders? 
+
+(y/n)  ... : " prompt
+    if [[ $prompt != "y" ]]
+    then 
+	echo "> Exiting: Please provide new [ -i metaID ] !"
+	exit_abnormal
+    else
+	echo "> Deleting content of the folders.. "
+	rm -r /projects/fs1/shared/ctg-projects/sc-cite-seq-10x/$id/*
+	rm -r /projects/fs1/shared/ctg-qc/sc-cite-seq-10x/$id/*
+	rm -r /projects/fs1/nas-sync/ctg-delivery/sc-cite-seq-10x/$id/*
+    fi
+fi
+# Check samplesheet name
+if [ -z $sheet ]; then
+    echo ""; echo "> No samplesheet specified"
+    sheet="CTG_SampleSheet.csv"
+    echo "- Using 'CTG_SampleSheet.csv'"
+    if [ ! -f $sheet ]; then
+	echo "> Error: CTG_SampleSheet.csv does not exist (in current dir)"
+	echo "- Please specify correct samplesheet, or create a CTG_SampleSheet.csv in current runfolder"
+	exit_abnormal
+    fi
+fi
+
+##############
+# Print info #
+##############
+echo ""
+echo "> The following arguments are entered:"
+echo "ID               : $id"
+echo "Runfolder        : $runfolder " 
+echo "Sheet            : $sheet"
+echo "Index-type-rna   : ${index_rna}-index"
+echo "Index-type-adt   : ${index_adt}-index"
+echo "Bcl2fq-arg-rna   : '$b2farg_rna'"
+echo "Bcl2fq-arg-adt   : '$b2farg_adt'"
+if [ -z $featureref ]; then
+    featureref_orig="$runfolder/feature.ref.csv"
+fi
+echo "FeatureRef csv   : $featureref_orig "
+
+if [ -z $custom_genome ]; then
+    echo "Custom Genome    : NONE "
+else
+    echo "Custom Genome    : $custom_genome "
+fi
+
+if [ $demux == "y" ]; then
+    echo "Demux            : YES "
+else
+    echo "Demux            : NO "
+fi
+
+if [ $resume == "y" ]; then
+    echo "Resume           : YES "
+else
+    echo "Resume           : NO "
+fi
+
+echo ""
+echo "Runfolder          : $runfolder "
+echo "Project Logfolder  : /projects/fs1/shared/ctg-projects/sc-cite-seq-10x/$id"
+echo "QC Logfolder       : /projects/fs1/shared/ctg-qc/sc-cite-seq-10x/$id"
+echo "Output             : /projects/fs1/nas-sync/ctg-delivery/sc-cite-seq-10x/$id"
+echo ""
+
+# Prompt user to approve running in current directory and input
+read -p "> WARNING: Can only be run from within runfolder! 
+
+- Are you in runfolder in which you want run? 
+- And is input described above correct ?  
+
+(y/n)  ... : " prompt
+if [[ $prompt != "y" ]]
+then 
+    echo "> Exiting: Go to runfolder!"
+    exit 0
+fi
+
+################
+# Set up files #
+################
+
+# Creating project dir for logging pipeline
+projdir="/projects/fs1/shared/ctg-projects/sc-cite-seq-10x/$id/"
+mkdir -p $projdir
+
+# Copy nextflow script and config to project folder
+nf_pipe="/projects/fs1/shared/ctg-pipelines/ctg-sc-cite-seq-10x/pipe-sc-cite-seq-10x.nf"
+nf_config="/projects/fs1/shared/ctg-pipelines/ctg-sc-cite-seq-10x/nextflow.config"
+nf_bin="/projects/fs1/shared/ctg-pipelines/ctg-sc-cite-seq-10x/bin/"
+
+cp $nf_pipe $projdir
+cp $nf_config $projdir
+cp -r $nf_bin $projdir
+
+projdir_meta="$projdir/metadata/"
+mkdir -p $projdir_meta
+cp $featureref_orig $projdir_meta
+featurerefcsv=$(basename $featureref_orig)
+featureref="${projdir_meta}/$featurerefcsv"
+
+# Edit config file
+proj_conf=$projdir/nextflow.config
+sed "s/xmetaidx/$id/g" $proj_conf > tmp.txt; mv tmp.txt $proj_conf
+sed "s|xrunfolderx|$runfolder|g" $proj_conf > tmp.txt; mv tmp.txt $proj_conf
+sed "s/xsamplesheetx/$sheet/g" $proj_conf > tmp.txt; mv tmp.txt $proj_conf
+sed "s/xbclargrnax/$b2farg_rna/g" $proj_conf > tmp.txt; mv tmp.txt $proj_conf
+sed "s/xbclargadtx/$b2farg_adt/g" $proj_conf > tmp.txt; mv tmp.txt $proj_conf
+sed "s/xindexrnax/$index_rna/g" $proj_conf > tmp.txt; mv tmp.txt $proj_conf
+sed "s/xindexadtx/$index_adt/g" $proj_conf > tmp.txt; mv tmp.txt $proj_conf
+sed "s|xfeaturesx|$featureref|g" $proj_conf > tmp.txt; mv tmp.txt $proj_conf
+if [ ! -z $custom_genome ]; then
+    sed "s|xcustomgenomex|$custom_genome|g" $proj_conf > tmp.txt; mv tmp.txt $proj_conf
+fi
+if [ $demux == "y" ];then
+    sed "s/xdemuxx/y/g" $proj_conf > tmp.txt; mv tmp.txt $proj_conf
+else
+    sed "s/xdemuxx/n/g" $proj_conf > tmp.txt; mv tmp.txt $proj_conf
+fi
+
+# Copy edited config to runfolder
+cp $proj_conf $runfolder/$id.nextflow.config
+# Copy samplesheet to project folder (ctg-projects..)
+cp $sheet $projdir
+
+
+#####################
+# Start nf-pipeline #
+#####################
+
+# Go to ctg-project folder to execute pipeline
+cd $projdir
+
+if [ $nostart == "n" ]; then
+    if [ $resume == "y" ]; then
+	nohup nextflow run $nf_pipe -resume > log.nf.sc-cite-seq-10x.$id &
+    else
+	nohup nextflow run $nf_pipe > log.nf.sc-cite-seq-10x.$id &
+    fi
+    echo ; echo 
+    echo "######################################"
+    echo "# sc-cite-seq-10x pipeline submitted #"
+    echo "######################################"
+    echo ; echo 
+else
+    echo "Pipeline not started (flag -n). Pipeline files ready in $projdir."
+fi
+
+
+
+
+
