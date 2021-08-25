@@ -18,7 +18,9 @@ nohup nextflow run pipe-sc-cite-seq-10x.nf > log.pipe-sc-cite-seq-10x.txt &
 
 ## Input files
 
-1. Samplesheet (see `SampleSheet` section below)
+The following files must be in the runfolder to start pipeline successfully.
+
+1. Samplesheet  (see `SampleSheet` section below)
 2. Feature reference csv (see `Feature Reference` section below)
 
 ### 1. Samplesheet (CTG_SampleSheet.sc-cite-seq-10x.csv):
