@@ -39,6 +39,16 @@ nohup nextflow run pipe-sc-cite-seq-10x.nf > log.pipe-sc-cite-seq-10x.txt &
 - `Sample_Lib` : 'rna'/'adt'. Specify whether sample is RNA or ADT library. 
 - `Sample_Pair` : To match the rna sample with the corresponding adt sample. e.g. in the example above, sample 'Sr1' is the rna library, that should be matched with 'Sadt1' which is the adt library of the sample
 
+### Samplesheet template
+
+#### Samplesheet name : `CTG_SampleSheet.sc-cite-seq-10x.csv`
+```
+Sample_ID,index,Sample_Project,Sample_Species,Sample_Lib,Sample_Pair
+Si1,SI-GA-D9,2021_012,human,rna,1
+Si2,SI-GA-H9,2021_012,mouse,rna,2
+Sample1,SI-GA-C9,2021_013,human,adt,1
+Sample2,SI-GA-C9,2021_013,mouse,adt,2
+``` 
 
 ### 2. Feature reference (feature.ref.csv)
 Csv that declares the molecule structure and unique Feature Barcode sequence of each feature present in your experiment 
@@ -58,18 +68,8 @@ Example (TotalSeq A):
 | CD45 | CD45 | R2 | ^(BC) | TCCCTTGCGATTTAC | Antibody Capture | 
 
 
-### CSV format templates
-
-#### 1. Samplesheet : `CTG_SampleSheet.sc-cite-seq-10x.csv`
-```
-Sample_ID,index,Sample_Project,Sample_Species,Sample_Lib,Sample_Pair
-Si1,SI-GA-D9,2021_012,human,rna,1
-Si2,SI-GA-H9,2021_012,mouse,rna,2
-Sample1,SI-GA-C9,2021_013,human,adt,1
-Sample2,SI-GA-C9,2021_013,mouse,adt,2
-``` 
-
-#### 2. Feature reference : `feature.ref.csv`
+### Feature reference template 
+#### Filename : `feature.ref.csv`
 ```
 id,name,read,pattern,sequence,feature_type
 CD235a,CD235a,R2,^(BC),AGAGTATGTATGGGA,Antibody Capture
