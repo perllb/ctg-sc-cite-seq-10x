@@ -16,28 +16,12 @@
 nohup nextflow run pipe-sc-cite-seq-10x.nf > log.pipe-sc-cite-seq-10x.txt &
 ```
 
-## Input
+## Input files
 
-- Samplesheet (see `SampleSheet` section below)
-- Feature reference csv (see `Feature Reference` section below)
+1. Samplesheet (see `SampleSheet` section below)
+2. Feature reference csv (see `Feature Reference` section below)
 
-## Pipeline steps:
-
-Cellranger version: cellranger v6.0 
-
-* `parse samplesheets`: Creates samplesheets (one for RNA, and one for ADT/HTO) for demux based on the input samplesheet. 
-* `generate library csv`: Creates library.csv file based on input samplesheet. One .csv per matched RNA and ADT/HTO sample.
-* `Demultiplexing` (cellranger mkfastq): Converts raw basecalls to fastq, and demultiplex samples based on index (https://support.10xgenomics.com/single-cell-gene-expression/software/pipelines/6.0/using/mkfastq). Does this separately for RNA and ADT/HTO (since they often have different index types (dual/single)
-* `FastQC`: FastQC calculates quality metrics on raw sequencing reads (https://www.bioinformatics.babraham.ac.uk/projects/fastqc/). MultiQC summarizes FastQC reports into one document (https://multiqc.info/).
-* `Align` + `Counts` + `Feature Barcoding` (cellranger count): Aligns fastq files to reference genome, counts genes for each cell/barcode, and quantifies ADT/HTO features per barcode - Then performs secondary analysis such as clustering and generates the cloupe files (https://support.10xgenomics.com/single-cell-gene-expression/software/pipelines/latest/using/feature-bc-analysis).
-* `Aggregation` (cellranger aggr): Automatically creates the input csv pointing to molecule_info.h5 files for each sample to be aggregated and executes aggregation (https://support.10xgenomics.com/single-cell-gene-expression/software/pipelines/latest/using/aggregate). 
-* `Cellranger count metrics` (bin/ctg-sc-cite-seq-count-metrics-concat.py): Collects main count metrics (#cells and #reads/cell etc.) from each sample and collect in table (**UPDATE**)
-* `multiQC`: Compile fastQC and cellranger count metrics in multiqc report
-* `md5sum`: md5sum of all generated files
-
-
-## Samplesheet requirements:
-
+### 1. Samplesheet (CTG_SampleSheet.sc-cite-seq-10x.csv):
 
  | Sample_ID | index | Sample_Project | Sample_Species | Sample_Lib | Sample_Pair | 
  | --- | --- | --- | --- | --- | --- | 
@@ -48,15 +32,15 @@ Cellranger version: cellranger v6.0
 
 - The nf-pipeline takes the following Columns from samplesheet to use in channels:
 
-
-- `Sample_ID` : ID of sample. ('Sample_Name' will be ignored)
-- `index` : Must use index ID if dual. For single, index sequence works too.
-- `Sample_Project` : Project ID
-- `Sample_Species` : 'human'/'mouse'/'custom' - if custom, see below how to edit the config file
-- `Sample_Lib` : 'rna'/'adt'
+- `Sample_ID` : ID of sample. Sample_ID can only contain a-z, A-Z and "_".  E.g space and hyphen ("-") are not allowed! If 'Sample_Name' is present, it will be ignored. 
+- `index` : Must use index ID (10x ID) if dual index. For single index, the index sequence works too.
+- `Sample_Project` : Project ID. E.g. 2021_033, 2021_192.
+- `Sample_Species` : Only 'human'/'mouse'/'custom' are accepted. If species is not human or mouse, set 'custom'. This custom reference genome has to be specified in the nextflow config file. See below how to edit the config file.
+- `Sample_Lib` : 'rna'/'adt'. Specify whether sample is RNA or ADT library. 
 - `Sample_Pair` : To match the rna sample with the corresponding adt sample. e.g. in the example above, sample 'Sr1' is the rna library, that should be matched with 'Sadt1' which is the adt library of the sample
 
-## Feature reference
+
+### 2. Feature reference (feature.ref.csv)
 Csv that declares the molecule structure and unique Feature Barcode sequence of each feature present in your experiment 
 
 See https://support.10xgenomics.com/single-cell-gene-expression/software/pipelines/latest/using/feature-bc-analysis for more info
@@ -72,6 +56,46 @@ Example (TotalSeq A):
 | CD34 | CD34 | R2 | ^(BC) | GCAGAAATCTCCCTT | Antibody Capture | 
 | CD49d | CD49d | R2 | ^(BC) | CCATTCAACTTCCGG | Antibody Capture | 
 | CD45 | CD45 | R2 | ^(BC) | TCCCTTGCGATTTAC | Antibody Capture | 
+
+
+### CSV format templates
+
+#### 1. Samplesheet : `CTG_SampleSheet.sc-cite-seq-10x.csv`
+```
+Sample_ID,index,Sample_Project,Sample_Species,Sample_Lib,Sample_Pair
+Si1,SI-GA-D9,2021_012,human,rna,1
+Si2,SI-GA-H9,2021_012,mouse,rna,2
+Sample1,SI-GA-C9,2021_013,human,adt,1
+Sample2,SI-GA-C9,2021_013,mouse,adt,2
+``` 
+
+#### 2. Feature reference : `feature.ref.csv`
+```
+id,name,read,pattern,sequence,feature_type
+CD235a,CD235a,R2,^(BC),AGAGTATGTATGGGA,Antibody Capture
+CD33,CD33,R2,^(BC),TAACTCAGGGCCTAT,Antibody Capture
+CD71,CD71,R2,^(BC),CCGTGTTCCTCATTA,Antibody Capture
+CD11b,CD11b,R2,^(BC),GACAAGTGATCTGCA,Antibody Capture
+CD45RA,CD45RA,R2,^(BC),TCAATCCTTCCGCTT,Antibody Capture
+CD34,CD34,R2,^(BC),GCAGAAATCTCCCTT,Antibody Capture
+CD49d,CD49d,R2,^(BC),CCATTCAACTTCCGG,Antibody Capture
+CD45,CD45,R2,^(BC),TCCCTTGCGATTTAC,Antibody Capture
+
+``` 
+
+## Pipeline steps:
+
+Cellranger version: cellranger v6.0 
+
+* `parse samplesheets`: Creates samplesheets (one for RNA, and one for ADT/HTO) for demux based on the input samplesheet. 
+* `generate library csv`: Creates library.csv file based on input samplesheet. One .csv per matched RNA and ADT/HTO sample.
+* `Demultiplexing` (cellranger mkfastq): Converts raw basecalls to fastq, and demultiplex samples based on index (https://support.10xgenomics.com/single-cell-gene-expression/software/pipelines/6.0/using/mkfastq). Does this separately for RNA and ADT/HTO (since they often have different index types (dual/single)
+* `FastQC`: FastQC calculates quality metrics on raw sequencing reads (https://www.bioinformatics.babraham.ac.uk/projects/fastqc/). MultiQC summarizes FastQC reports into one document (https://multiqc.info/).
+* `Align` + `Counts` + `Feature Barcoding` (cellranger count): Aligns fastq files to reference genome, counts genes for each cell/barcode, and quantifies ADT/HTO features per barcode - Then performs secondary analysis such as clustering and generates the cloupe files (https://support.10xgenomics.com/single-cell-gene-expression/software/pipelines/latest/using/feature-bc-analysis).
+* `Aggregation` (cellranger aggr): Automatically creates the input csv pointing to molecule_info.h5 files for each sample to be aggregated and executes aggregation (https://support.10xgenomics.com/single-cell-gene-expression/software/pipelines/latest/using/aggregate). 
+* `Cellranger count metrics` (bin/ctg-sc-cite-seq-count-metrics-concat.py): Collects main count metrics (#cells and #reads/cell etc.) from each sample and collect in table (**UPDATE**)
+* `multiQC`: Compile fastQC and cellranger count metrics in multiqc report
+* `md5sum`: md5sum of all generated files
 
 
 ## Handle dual and single indexing in same sequencing run
