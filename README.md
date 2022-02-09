@@ -146,7 +146,9 @@ Cellranger version: cellranger v6.0
 
 ## Handle dual and single indexing in same sequencing run
 
-RNA and ADT/HTO libraries must often have different indexing. It is handled by the pipeline by looking up the length of `adt` index, and setting the --use-bases-mask accordingly. If adt index is found to be 6 bases, it will set --use-bases-mask=Y28n*,I6n*,N10,Y90n* during mkfastq_adt.
+RNA and ADT/HTO libraries must often have different indexing. It is handled by the pipeline by:
+- It looks up the length of `adt` index, and setting the --use-bases-mask accordingly. If adt index is found to be 6 bases, it will set --use-bases-mask=Y28n*,I6n*,N10,Y90n* during mkfastq_adt. 
+- By default, it will assume that RNA sample indices are dual, and ADT indices are single. It will thus set --filter-single-index during mkfastq_adt, and --filter-dual-index during mkfastq_rna. 
 	
 ## Container
 - `sc-cite-seq-10x`: For 10x sc-cite-seq. Based on cellranger v6.
