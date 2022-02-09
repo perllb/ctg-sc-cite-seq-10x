@@ -18,6 +18,8 @@
 ```
 nohup nextflow run pipe-sc-cite-seq-10x.nf > log.pipe-sc-cite-seq-10x.txt &
 ```
+## Driver
+- Driver for pipeline located in `.../shared/ctg-pipelines/ctg-sc-cite-seq-10x/v2.0/sc-cite-seq-10x-driver`
 
 ## Input files
 
@@ -28,7 +30,8 @@ The following files must be in the runfolder to start pipeline successfully.
 
 ### 1. Samplesheet (CTG_SampleSheet.sc-cite-seq-10x.csv):
 
-Must be named: CTG_SampleSheet.**sc-cite-seq-10x**.csv
+- Can have other names than CTG_SampleSheet.**sc-cite-seq-10x**.csv
+- Then specify which sheet when starting driver: e.g. `sc-cite-seq-10x-driver -s CTG_SampleSheet.sc-cite-seq-10x.2022_102.csv`
 
 #### Example sheet
 ```
