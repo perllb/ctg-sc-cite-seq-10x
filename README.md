@@ -25,12 +25,38 @@ The following files must be in the runfolder to start pipeline successfully.
 
 ### 1. Samplesheet (CTG_SampleSheet.sc-cite-seq-10x.csv):
 
- | Sample_ID | index | Sample_Project | Sample_Species | Sample_Lib | Sample_Pair | 
- | --- | --- | --- | --- | --- | --- | 
- | Sr1 | SI-GA-D9 | proj_2021_012 | human | rna | 1 |
- | Sr2 | SI-GA-H9 | proj_2021_012 | human | rna | 2 |
- | Sadt1 | SI-GA-C9 | proj_2021_013 | mouse | adt | 1 |
- | Sadt2 | SI-GA-C9 | proj_2021_013 | mouse | adt | 2 |
+#### Example sheet
+```
+[Header]
+metaid,2021_067_citeseqTest
+antibodies,"ADT_A0574,ADT_A0052,ADT_A0394,ADT_A0161,ADT_A0063,ADT_A0576,ADT_A0054,ADT_A0048"
+[Data]
+Lane,Sample_ID,index,Sample_Species,Sample_Project,Sample_Lib,Sample_Pair,email,autodeliver
+,EFS_21_022,SI-TT-D5,human,2021_067,rna,1,per.a@med.lu.se,1
+,con_21_023,SI-TT-E5,human,2021_067,rna,2,per.a@med.lu.se,1
+,rnaEFS_ADT,ACAGTG,human,2021_067,adt,1,per.a@med.lu.se,1
+,con_ADT,TGACCA,human,2021_067,adt,2,per.a@med.lu.se,1
+```
+#### [Header] section
+Two optional entries. They can both be skipped, but recommended to use both:
+- `metaid` : optional. set to create working folders with this name. otherwise, it will be created based on runfolder name/date.
+- `antibodies` : optional. define antibodies used in experiment (across all samples). The sc-cite-seq-10x-driver will use these IDs to extract all info from cellranger_totalseq references, and create the "features" csv file needed in count analysis.
+  - recommended if using antibodies that are defined in the totalSeq human cocktail csv files (/projects/fs1/shared/references/cellranger_totalseq). 
+  	- Set IDs of antibodies that were used in experiment (and will be used to create the feature reference file for `count` analysis.)
+  	- IMPORTANT: They MUST match the IDs of the totalSeq human cocktail references on lsens 
+	- The list of antibodies should be comma-separated, and best if quoted (should also work without quote, but not tested.
+  - Alternative is to
+  	- create a feature.ref.csv file, and add it to runfolder. It must have the standard required cellranger format (see: https://support.10xgenomics.com/single-cell-gene-expression/software/pipelines/latest/using/feature-bc-analysis). Note: The sc-cite-seq-10x-driver will first look for a `feature.ref.csv` file in runfolder. If not found, it will look for `antibodies,` field in header section. 
+  	- The last alternative is to run the driver with -f flag, pointing to any file that serve as feature-ref csv. e.g. `sc-cite-seq-10x-driver -f /path/to/feature.ref.csv`
+
+#### [Data] section
+
+ | Sample_ID | index | Sample_Species | Sample_Project | Sample_Lib | Sample_Pair | email | autodeliver |
+ | --- | --- | --- | --- | --- | --- | --- | --- | 
+ | Sr1 | SI-GA-D9 | human | 2022_022 | rna | 1 | per.a@med.lu.se | y |
+ | Sr2 | SI-GA-H9 | mouse | 2022_022 | rna | 2 | per.a@med.lu.se | y |
+ | Sadt1 | SI-GA-C9 | human | 2022_022 | adt | 1 | per.a@med.lu.se | y |
+ | Sadt2 | SI-GA-C9 | mouse | 2022_022 | adt | 2 | per.a@med.lu.se | y |
 
 - The nf-pipeline takes the following Columns from samplesheet to use in channels:
 
@@ -38,22 +64,40 @@ The following files must be in the runfolder to start pipeline successfully.
 - `index` : Must use index ID (10x ID) if dual index. For single index, the index sequence works too.
 - `Sample_Project` : Project ID. E.g. 2021_033, 2021_192.
 - `Sample_Species` : Only 'human'/'mouse'/'custom' are accepted. If species is not human or mouse, set 'custom'. This custom reference genome has to be specified in the nextflow config file. See below how to edit the config file.
-- `Sample_Lib` : 'rna'/'adt'. Specify whether sample is RNA or ADT library. 
+- `Sample_Lib` : 'rna'/'adt'. Specify whether sample is RNA or ADT library. Note - even if it is and HTO experiment, use `adt` for HTO.
 - `Sample_Pair` : To match the rna sample with the corresponding adt sample. e.g. in the example above, sample 'Sr1' is the rna library, that should be matched with 'Sadt1' which is the adt library of the sample
+- `email` : Email to customer (or ctg staff) that should retrieve email with qc and deliver info upon completion of pipeline. Note: only @med.lu.se emails works.
+- `autodeliver` : set to `y` if email should be sent automatically upon completion. Otherwise, set to `n`.
 
 ### Samplesheet template
 
 #### Samplesheet name : `CTG_SampleSheet.sc-cite-seq-10x.csv`
 ```
-Sample_ID,index,Sample_Project,Sample_Species,Sample_Lib,Sample_Pair
-Si1,SI-GA-D9,2021_012,human,rna,1
-Si2,SI-GA-H9,2021_012,mouse,rna,2
-Sample1,SI-GA-C9,2021_013,human,adt,1
-Sample2,SI-GA-C9,2021_013,mouse,adt,2
-``` 
+[Header]
+metaid,2021_067_citeseqTest
+antibodies,"ADT_A0574,ADT_A0052,ADT_A0394,ADT_A0161,ADT_A0063,ADT_A0576,ADT_A0054,ADT_A0048"
+[Data]
+Lane,Sample_ID,index,Sample_Species,Sample_Project,Sample_Lib,Sample_Pair,email,autodeliver
+,EFS_21_022,SI-TT-D5,human,2021_067,rna,1,per.a@med.lu.se,1
+,con_21_023,SI-TT-E5,human,2021_067,rna,2,per.a@med.lu.se,1
+,rnaEFS_ADT,ACAGTG,human,2021_067,adt,1,per.a@med.lu.se,1
+,con_ADT,TGACCA,human,2021_067,adt,2,per.a@med.lu.se,1
+```
 
 ### 2. Feature reference (feature.ref.csv)
-Csv that declares the molecule structure and unique Feature Barcode sequence of each feature present in your experiment 
+
+#### NB: 
+- Recommended is to use the `antibodies,` declarartion in the header: see examples above. 
+- The references are found in /projects/fs1/shared/references/cellranger_totalseq. 
+- The IDs must match "id" fields in these references
+- The driver will use these ids to extract the information needed for the feature.ref.csv file 
+- The driver will create the feature ref file and add it to nextflow.config to use in pipeline.
+
+#### If not using antibodies, list in header
+- Csv that declares the molecule structure and unique Feature Barcode sequence of each feature present in your experiment. 
+- This should either be added in runfolder (must be named /path/to/runfolder/**feature.ref.csv**).
+- Or it could be specified by driver with -f flag: sc-cite-seq-10x-driver -f /path/to/feature.ref.csv. 
+
 
 See https://support.10xgenomics.com/single-cell-gene-expression/software/pipelines/latest/using/feature-bc-analysis for more info
 
@@ -102,19 +146,7 @@ Cellranger version: cellranger v6.0
 
 ## Handle dual and single indexing in same sequencing run
 
-If your RNA and ADT/HTO libraries have different indexing it can be handled as following:
-
-#### RNA dual - ADT/HTO single
-In nextflow.config, set 
-```
-// bcl2fastq arguments
-bcl2fastqarg_rna = "" 
-bcl2fastqarg_adt = "--use-bases-mask=Y28n*,I6n*,N10,Y90n*" 
-// Index type ('dual' or 'single')
-index_rna = "dual"
-index_adt = "single"	
-
-```
+RNA and ADT/HTO libraries must often have different indexing. It is handled by the pipeline by looking up the length of `adt` index, and setting the --use-bases-mask accordingly. If adt index is found to be 6 bases, it will set --use-bases-mask=Y28n*,I6n*,N10,Y90n* during mkfastq_adt.
 	
 ## Container
 - `sc-cite-seq-10x`: For 10x sc-cite-seq. Based on cellranger v6.
