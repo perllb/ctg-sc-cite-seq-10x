@@ -26,6 +26,8 @@ The following files must be in the runfolder to start pipeline successfully.
 
 ### 1. Samplesheet (CTG_SampleSheet.sc-cite-seq-10x.csv):
 
+Must be named: CTG_SampleSheet.**sc-cite-seq-10x**.csv
+
 #### Example sheet
 ```
 [Header]
