@@ -1,11 +1,13 @@
 # ctg-sc-cite-seq-10x 
 ## Nextflow pipeline for processing of 10x chromium cite-seq with rna+(adt/hto) data with cellranger. 
 
+- Run one project at a time only
 - Analyze 10x cite-seq in one pipeline. 
 - Demux -> cellranger -> QC
 - Supports ADT/HTO and RNA libraries sequenced on same flowcell.
 - Supports different indexing of RNA and ADT/HTO library (e.g. RNA dual and ADT/HTO single). See `Handle dual and single indexing in same sequencing run` for more info.
 - It requires TotalSeq antibody IDs used for ADT/HTO in experiment, and creates feature reference csv. See `2. Feature reference (feature.ref.csv)` and `1. Samplesheet` sections below.
+
 
 
 1. Clone and build the Singularity container for this pipeline: https://github.com/perllb/ctg-sc-cite-seq-10x/tree/master/container
