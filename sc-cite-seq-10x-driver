@@ -12,26 +12,47 @@
 ###  -> Write pipeline output 
 ### * nf-Pipeline writes qc to shared/ctg-qc/sc-cite-seq-10x
 
+pipename="sc-cite-seq-10x"
+
+echo "############################"
+echo "   $pipename driver "
+echo "############################"
+
+# Set version of pipeline
+version="2.0"
+
 # Initialize variables
 runfolder=$(pwd)
 run=$(basename $runfolder)
 demux="y"
 resume='n'
+index='dual'
+sheetname="CTG_SampleSheet.$pipename.csv"
 index_rna='dual'
 index_adt='single'
 nostart='n'
+
+# Define directory prefix paths
+ctgqc_pre="/projects/fs1/shared/ctg-qc/"
+ctgpro_pre="/projects/fs1/shared/ctg-projects/"
+ctgdeliv_pre="/projects/fs1/shared/ctg-delivery/"
+ctgpipe_pre="/projects/fs1/shared/ctg-pipelines/"
+ctgrun_pre="/projects/fs1/nas-sync/upload/"
+
+# totalseq reference
+totalseqdir="/projects/fs1/shared/references/cellranger_totalseq/" 
 
 # usage message 
 usage() {
 
     echo ""
-    echo "Usage: sc-cite-seq-10x [ -m META_ID ] [ -s SAMPLESHEET ] [ -f FEATURE-REF-CSV ] [-i INDEX-TYPE-RNA] [ -a INDEX-TYPE-ADT ] [ -b BCL2FASTQ-ARG-ADT ] [ -E BCL2FASTQ-ARG-RNA ] [ -r RESUME ] [ -c CUSTOM-GENOME ] [ -d DEMUX-OFF ] [ -n NO-START ] [ -h HELP ] "  1>&2
+    echo "Usage: sc-cite-seq-10x [ -m META_ID ] [ -s SAMPLESHEET ] [ -f FEATURE-REF-CSV ] [-i INDEX-TYPE-RNA] [ -a INDEX-TYPE-ADT ] [ -b BCL2FASTQ-ARG-ADT ] [ -E BCL2FASTQ-ARG-RNA ] [ -r RESUME ] [ -c CUSTOM-GENOME ] [ -d DEMUX-OFF ] [ -n NO-START ] [ -v PIPELINE-VERSION ] [ -h HELP ] "  1>&2
     echo ""
     echo ""
     echo "Optional arguments: "
     echo "META-ID           -m : Set 'meta-id' for run-analysis (e.g. 210330-10x). Default: Takes date of runfolder + run ID in runfolder name and adds sc-cite-seq-10x as suffix. E.g. '210330_A00681_0334_AHWFKTDMXX' becomes 210330_0334-sc-cite-seq-10x "
     echo "SAMPLESHEET       -s : Set samplesheet used for run (Default: runfolder/CTG_SampleSheet.csv) "
-    echo "FEATURE REF       -f : Set feature ref csv path (Default: runfolder/feature.ref.csv) "
+    echo "FEATURE REF       -f : Set feature ref csv path (Default: use header of samplesheet to extract reference abs in /shared/references/cellranger_totalseq) "
     echo "INDEX-TYPE-RNA    -i : Set -a if change to single index RNA. (Default: dual) "  
     echo "INDEX-TYPE-ADT    -a : Set -a if change to dual index uses. (Default: single) "  
     echo "BCL2FASTQ-ARG-ADT -b : String with bcl2fastq argument for ADT demux. e.g. '--use-bases-mask=Y28n*,I6n*,N10,Y90n*"
@@ -40,6 +61,7 @@ usage() {
     echo "CUSTOM-GENOME     -c : Path to custom reference genome if needed. Skip if human/mouse defined in samplesheet "
     echo "DEMUX-OFF         -d : Set flag to skip mkfastq (then fastq must be in FQDIR) "
     echo "NO-START          -n : Set -n if you only want to create pipeline directory structure, copy all files to ctg-projects, but not start pipeline. Good if you want to modify config etc manually for this project before starting nextflow."
+    echo "VERSION           -v : Set which pipeline version to use (default: v2.0)"
     echo "HELP              -h : print help message" 
    
 }
@@ -50,7 +72,7 @@ exit_abnormal() {
 }
 
 # Read and control input arguments 
-while getopts m:f:s:iab:e:rc:dnh opt; do
+while getopts m:fs:iab:e:rc:dnvh opt; do
     case $opt in
 	m) id=$OPTARG
 	    ;;
@@ -74,6 +96,8 @@ while getopts m:f:s:iab:e:rc:dnh opt; do
 	    ;;
 	n) nostart="y"
 	    ;;
+	v) version=$OPTARG
+	    ;;
 	h) exit_abnormal
 	    ;;
 	\?) echo "> Error: Invalid option -$OPTARG" >&2
@@ -86,23 +110,43 @@ done
 ## Check arguments
 shift "$(( OPTIND -1 ))"
 
+echo " ------------------------------------------"
+# Check samplesheet name
+if [ -z $sheet ]; then
+    echo ""; echo "> WARNING! No samplesheet specified"
+    sheet="${sheetname}"
+    echo "- Using '${sheetname}'"
+    if [ ! -f $sheet ]; then
+	echo "> Error: '${sheetname} does not exist (in current dir)"
+	echo "- Please specify correct samplesheet, or create a ${sheetname} in current runfolder"
+	exit_abnormal
+    fi
+fi
+echo " ------------------------------------------"
 # Check meta-id
+# if not specified in command, look for header in samplesheet ("metaid") 
 if [ -z $id ]; then
-    echo ""; echo "> No meta-ID specified"
-    metaid=$(echo $run | cut -f1,3 -d"_")
-    id="${metaid}-sc-cite-seq-10x"
+    echo "> No meta-ID specified"
+    metaid=$(grep "metaid," $sheet | cut -f2 -d"," | tr -d '\n\r')
+    # if not specified in samplesheet header, use runfolder ID/date as metaid
+    if [ -z $metaid ]; then
+	metaid=$(echo $run | cut -f1,3 -d"_")
+	id="${metaid}-${pipename}"
+    else
+	id="${metaid}"
+    fi
     echo "- Using: '${id}'"
 fi
-
+echo " ------------------------------------------"
 # Check if meta-ID already exist
-if [ "$resume" == 'n' ] && [ -d /projects/fs1/shared/ctg-projects/sc-cite-seq-10x/$id ]; then
-    # Prompt user to approve overwriting current sc-cite-seq-10x project-folder
+if [ "$resume" == 'n' ] && [ -d $ctgpro_pre/$pipename/$id ]; then
+    # Prompt user to approve overwriting current $pipename project-folder
     read -p "> WARNING: $id has been used before:
 
 The following directories already exist:
-- /projects/fs1/shared/ctg-projects/sc-cite-seq-10x/$id 
-- /projects/fs1/shared/ctg-qc/sc-cite-seq-10x/$id 
-- /projects/fs1/nas-sync/ctg-delivery/sc-cite-seq-10x/$id 
+- $ctgpro_pre/$pipename/$id 
+- $ctgqc_pre/$pipename/$id 
+- $ctgdeliv_pre/$pipename/$id 
 
 
  Do you want to overwrite these folders? 
@@ -114,40 +158,115 @@ The following directories already exist:
 	exit_abnormal
     else
 	echo "> Deleting content of the folders.. "
-	rm -r /projects/fs1/shared/ctg-projects/sc-cite-seq-10x/$id/*
-	rm -r /projects/fs1/shared/ctg-qc/sc-cite-seq-10x/$id/*
-	rm -r /projects/fs1/nas-sync/ctg-delivery/sc-cite-seq-10x/$id/*
+	rm -r $ctgpro_pre/$pipename/$id/*
+	rm -r $ctgqc_pre/$pipename/$id/*
+	rm -r $ctgdeliv_pre/$pipename/$id/*
     fi
 fi
-# Check samplesheet name
-if [ -z $sheet ]; then
-    echo ""; echo "> No samplesheet specified"
-    sheet="CTG_SampleSheet.csv"
-    echo "- Using 'CTG_SampleSheet.csv'"
-    if [ ! -f $sheet ]; then
-	echo "> Error: CTG_SampleSheet.csv does not exist (in current dir)"
-	echo "- Please specify correct samplesheet, or create a CTG_SampleSheet.csv in current runfolder"
-	exit_abnormal
+echo " ------------------------------------------"
+echo "> Feature reference "
+##################
+# Feature ref ####
+##################
+# Set projdir and metadata - where featureref will be added
+projdir="${ctgpro_pre}/${pipename}/$id/"
+metadir="${projdir}/metadata"
+mkdir -p ${projdir}	    
+mkdir -p ${metadir}
+# define path to the featureref file that will be used by pipeline (if exists, then mv to this file)
+featureref_path=${metadir}/feature.ref.csv
+# If using custom feature-ref
+if [ -z $featureref ]; then # if NO feature ref file specified by command line
+    # Check if it is in runfolder
+    featureref_custom="$runfolder/feature.ref.csv" 
+    if [ -f $featureref_custom ]; then
+	echo " - feature.ref.csv found in runfolder - use!"
+	cp $featureref_custom $featureref_path
+    else # if not specified and NOT in runfolder - check if samplesheet has specified antibodies to check up from reference!
+	abs=$(grep "antibodies," $sheet | cut -f2- -d"," | tr -d '\n\r' | sed "s/\"//g")
+	if [ -z ${abs} ]; then
+	    abs="no-adt specified in samplesheet"
+	    echo "> ERROR: No feature reference specified."
+	    echo " - No Runfolder/feature.ref.csv ($runfolder/feature.ref.csv)"
+	    echo " - No feature-ref csv specified by -f tag (sc-cite-seq-10x-driver -f <feature_ref_csv>)"
+	    echo " - No antibody IDs specified in samplesheet header (should be added under [Header] as 'antibodies,\"ADT_A0431,ADT_A0531\"' etc"
+	    exit_abnormal
+	else
+	    echo "> Using antibody IDs specified in samplesheet: ${abs}"
+	    echo " ---> extracting antibodies from references, to create featureref"
+	    # Get type of antibody
+	    first_ab=$(echo $abs | cut -f1 -d",")
+	    # Get if ADT or HTO
+	    ab_class=$(echo ${first_ab:0:3} | tr '[:upper:]' '[:lower:]')
+	    # Get if A, B or C
+	    ab_type=${first_ab:4:1}
+	    echo " - class: $ab_class"
+	    echo " - type : TotalSeq_${ab_type}"
+	    # Get totalseq reference file on /shared/references..
+	    total_ref=$(ls $totalseqdir/$ab_class/TotalSeq_${ab_type}_H*)
+	    echo "- TotalSeq ref: $total_ref"
+	    # Set featureref for cellranger - based on antibodies specified
+	    # write header for csv
+	    head -1 $total_ref > $featureref_path
+	    # iterate through antibody IDs and search in references
+	    for ab in $(echo $abs | sed "s/,/ /g"); do
+		grep $ab $total_ref >> $featureref_path
+	    done
+	    echo "> Written feature reference csv file: $featureref_path"
+	    cat $featureref_path
+	    sleep 2
+	fi
+    fi
+else
+    # if feature ref file specified by command line, check if exists - and the set path
+    if [ -f $featureref ]; then
+	echo "- featureref file specified by command: $featureref"
+	echo "  - exists!"
+	cp $featureref $featureref_path
     fi
 fi
+
+## Get email for delivery
+email=$(grep "email," $sheet | cut -f2 -d"," | tr -d '\n\r')
+## autodeliver? 
+# check if autodelivery
+autodeliver=$(grep "autodeliver," $sheet | cut -f2 -d"," | tr -d '\n\r')
+if [ "$autodeliver" != "y" ] && [ "$autodeliver" != "n"] && [ "$autodeliver" != "Y"] && [ "$autodeliver" != "N"]; then
+    echo "> ERROR: 'autodeliver,<val>': val must be 'y' or 'n'  ! Current val: $autodeliver"
+fi
+
 
 ##############
 # Print info #
 ##############
 echo ""
+echo " ------------------------------------------"
 echo "> The following arguments are entered:"
+echo " ------------------------------------------"
 echo "ID               : $id"
 echo "Runfolder        : $runfolder " 
 echo "Sheet            : $sheet"
+echo " ------------------------------------------"
+echo " - Demux info "
 echo "Index-type-rna   : ${index_rna}-index"
 echo "Index-type-adt   : ${index_adt}-index"
 echo "Bcl2fq-arg-rna   : '$b2farg_rna'"
 echo "Bcl2fq-arg-adt   : '$b2farg_adt'"
-if [ -z $featureref ]; then
-    featureref_orig="$runfolder/feature.ref.csv"
+echo " ------------------------------------------"
+echo " - Features "
+if [ -f ${featureref_path} ]; then
+    echo "Feature Ref:   : ${featureref_path}"
 fi
-echo "FeatureRef csv   : $featureref_orig "
+if [ ! -z ${abs} ]; then
+    echo " - based on antibodies specified in samplesheet (antibodies,x), extracted from TotalSeq references"
+    echo "Antibodies   : ${abs}"
+fi
+echo "> Delivery "
+echo "email           : $email "
+echo "autodelivery    : $autodeliver "
 
+echo " ------------------------------------------"
+echo " - Misc "
 if [ -z $custom_genome ]; then
     echo "Custom Genome    : NONE "
 else
@@ -165,13 +284,14 @@ if [ $resume == "y" ]; then
 else
     echo "Resume           : NO "
 fi
-
+echo " ------------------------------------------"
+echo " - Output"
+echo "Project Logfolder  : $ctgpro_pre/$pipename/$id"
+echo "QC Logfolder       : $ctgqc_pre/$pipename/$id"
+echo "Output             : $ctgdeliv_pre/$pipename/$id"
 echo ""
-echo "Runfolder          : $runfolder "
-echo "Project Logfolder  : /projects/fs1/shared/ctg-projects/sc-cite-seq-10x/$id"
-echo "QC Logfolder       : /projects/fs1/shared/ctg-qc/sc-cite-seq-10x/$id"
-echo "Output             : /projects/fs1/nas-sync/ctg-delivery/sc-cite-seq-10x/$id"
-echo ""
+echo " ------------------------------------------"
+echo " ------------------------------------------"
 
 # Prompt user to approve running in current directory and input
 read -p "> WARNING: Can only be run from within runfolder! 
@@ -191,23 +311,17 @@ fi
 ################
 
 # Creating project dir for logging pipeline
-projdir="/projects/fs1/shared/ctg-projects/sc-cite-seq-10x/$id/"
+projdir="${ctgpro_pre}/${pipename}/$id/"
 mkdir -p $projdir
 
 # Copy nextflow script and config to project folder
-nf_pipe="/projects/fs1/shared/ctg-pipelines/ctg-sc-cite-seq-10x/pipe-sc-cite-seq-10x.nf"
-nf_config="/projects/fs1/shared/ctg-pipelines/ctg-sc-cite-seq-10x/nextflow.config"
-nf_bin="/projects/fs1/shared/ctg-pipelines/ctg-sc-cite-seq-10x/bin/"
+nf_pipe="${ctgpipe_pre}/ctg-${pipename}/v${version}/pipe-${pipename}.nf"
+nf_config="${ctgpipe_pre}/ctg-${pipename}/v${version}/nextflow.config"
+nf_bin="${ctgpipe_pre}/ctg-${pipename}/v${version}/bin/"
 
 cp $nf_pipe $projdir
 cp $nf_config $projdir
 cp -r $nf_bin $projdir
-
-projdir_meta="$projdir/metadata/"
-mkdir -p $projdir_meta
-cp $featureref_orig $projdir_meta
-featurerefcsv=$(basename $featureref_orig)
-featureref="${projdir_meta}/$featurerefcsv"
 
 # Edit config file
 proj_conf=$projdir/nextflow.config
@@ -218,7 +332,9 @@ sed "s/xbclargrnax/$b2farg_rna/g" $proj_conf > tmp.txt; mv tmp.txt $proj_conf
 sed "s/xbclargadtx/$b2farg_adt/g" $proj_conf > tmp.txt; mv tmp.txt $proj_conf
 sed "s/xindexrnax/$index_rna/g" $proj_conf > tmp.txt; mv tmp.txt $proj_conf
 sed "s/xindexadtx/$index_adt/g" $proj_conf > tmp.txt; mv tmp.txt $proj_conf
-sed "s|xfeaturesx|$featureref|g" $proj_conf > tmp.txt; mv tmp.txt $proj_conf
+sed "s|xfeaturesx|$featureref_path|g" $proj_conf > tmp.txt; mv tmp.txt $proj_conf
+sed "s|xemailx|${email}|g" $proj_conf > tmp.txt; mv tmp.txt $proj_conf
+sed "s|xautodeliverx|${autodeliver}|g" $proj_conf > tmp.txt; mv tmp.txt $proj_conf
 if [ ! -z $custom_genome ]; then
     sed "s|xcustomgenomex|$custom_genome|g" $proj_conf > tmp.txt; mv tmp.txt $proj_conf
 fi
@@ -243,9 +359,9 @@ cd $projdir
 
 if [ $nostart == "n" ]; then
     if [ $resume == "y" ]; then
-	nohup nextflow run $nf_pipe -resume > log.nf.sc-cite-seq-10x.$id &
+	nohup nextflow run $nf_pipe -resume > log.nf.$pipename.$id &
     else
-	nohup nextflow run $nf_pipe > log.nf.sc-cite-seq-10x.$id &
+	nohup nextflow run $nf_pipe > log.nf.$pipename.$id &
     fi
     echo ; echo 
     echo "######################################"

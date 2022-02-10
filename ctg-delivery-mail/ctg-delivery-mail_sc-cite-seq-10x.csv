@@ -1,0 +1,72 @@
+<h1>CTG data delivery</h1>
+<h3>The sequencing and processing of your CTG "sc-CITE-seq-10x" samples is completed and ready for download. Please find download instructions below and QC reports attached.</h3>
+<p><img src="https://content.ilabsolutions.com/wp-content/uploads/2021/12/2021-12-08_15-26-03.jpg" width="500" /></p>
+<h2>CTG-Project-ID</h2>
+<h2 style="background-color: cadetblue; color: white;">xxprojidxx</h2>
+<h2>CTG-Pipeline</h2>
+<h2 style="background-color: cadetblue; color: white;">sc-cite-seq-10x<a href="https://github.com/perllb/ctg-sc-cite-seq-10x">(github)</a></h2>
+<h3>Note:</h3>
+<p>This email is automatically generated and sent upon completion of the pipeline, in order to provide you the data as soon as possible. The CTG team has not yet assessed the quality of the experiment. Please go through the attached QC reports, to ensure the data looks OK before you proceed with further analysis. The CTG team will go through the QC metrics as soon as possible, and get back to you if we find issues. Please do not hesitate to write us if you have any questions, or encounter any issues.</p>
+<hr />
+<h3>You can download the files with:</h3>
+<p><span style="background-color: lightgrey;">xxdownloadcommandxx</span></p>
+<p>Password: <span style="background-color: lightgrey;">xxpasswordxx</span></p>
+<p>Please find attached <strong>ctg-delivery-guide-v1.0.pdf</strong> for download instructions.</p>
+<hr />
+<h3>Activate your IP adress</h3>
+<p>Please note that we need to whitelist your IP address for the download to work.</p>
+<p>- Go to <a href="www.whatismyip.com">www.whatismyip.com</a> and get the IPv4 adress.</p>
+<p>Or from terminal:</p>
+<p><span style="background-color: lightgrey;">curl ipecho.net/plain;</span></p>
+<p>When you have your IP address, please send it back to this email, so it can be whitelisted.</p>
+<hr />
+<h3>Check file integrity</h3>
+<p>- Use the ctg-md5* file in the downloaded project folder.</p>
+<p><strong>Unix/Windows:</strong></p>
+<p><span style="background-color: lightgrey;">md5sum -c ctg-md5.*.txt</span></p>
+<hr />
+<h2>Pipeline steps:</h2>
+<p><strong>Cellranger version</strong>: <span style="background-color: powderblue;">cellranger v6.0</span></p>
+<ul>
+<li><strong>Demultiplexing</strong> (cellranger mkfastq): Converts raw basecalls to fastq, and demultiplex samples based on index (<a href="https://support.10xgenomics.com/single-cell-gene-expression/software/pipelines/6.0/using/mkfastq">Cellranger mkfastq</a>).</li>
+<li><strong>FastQC</strong>: FastQC calculates quality metrics on raw sequencing reads (<a href="https://www.bioinformatics.babraham.ac.uk/projec\
+ts/fastqc/">FastQC</a>).</li>
+<li><strong>Align + Counts</strong> (cellranger count): Aligns fastq files to reference genome, counts genes and antibody tags for each cell/barcode, perform secondary analysis such as clustering and generates the cloupe files (<a href="https://support.10xgenomics.com/single-cell-gene-expression/software/pipelines/6.0/using/count">Cellranger count</a>).</li>
+<li><strong>Aggregation</strong> (cellranger aggr): Automatically creates the input csv pointing to molecule_info.h5 files for each sample to be \ aggregated and executes aggregation (<a href="https://support.10xgenomics.com/single-cell-gene-expression/software/pipelines/latest/usin\
+g/aggregate">Cellranger aggr</a>).</li>
+<li><strong>Cellranger count metrics</strong> (bin/ctg-sc-adt/rna-count-metrics-concat.py): Collects main count metrics (#cells and #reads/cell etc.) from each sample and collect in table</li>
+<li><strong>MultiQC</strong>: Compile fastQC and cellranger count metrics in multiqc report (<a href="https://multiqc.info/">multiQC</a>).</li>
+<li><strong>md5sum</strong>: md5sum of deliverables.</li>
+</ul>
+<h2>Feature reference csv (Antibodies):</h2>
+<p>xxfeaturerefxx</p>
+<h2>Output:</h2>
+<p><strong>ctg-xxprojidxx</strong></p>
+<ul>
+<li><strong>qc</strong>: Quality control output.
+<ul>
+<li><strong>cellranger</strong> metrics: Main metrics summarising the count / cell output</li>
+<li><strong>fastqc</strong> output</li>
+<li><strong>multiqc</strong>: Summarizing FastQC, cellranger and demultiplexing metrics</li>
+</ul>
+</li>
+<li><strong>fastq</strong>: Contains raw fastq files from cellranger mkfastq.</li>
+<li><strong>count</strong>: Cellranger count output. Here you find gene/cell count matrices, secondary analysis output, and more. See (<a>count</a>) for more information on th\ e output files.</li>
+<li><strong>summaries</strong>:
+<ul>
+<li><strong>web-summary</strong> files which provide an overview of essential metrics from the 10x run.</li>
+<li><strong>cloupe</strong> files which can be used to explore the data interactively in the Loupe browser (<a href="https://support.10xgenomics.com/single-cell-gene-expression/software/visualization/latest/what-is-loupe-cell-browser">cloupe</a>)</li>
+</ul>
+</li>
+<li><strong>aggregate</strong>: Output from cellranger aggregation (if more than one sample).</li>
+<li><strong>ctg-md5.PROJ_ID.txt</strong>: text file with md5sum recursively from output dir root</li>
+</ul>
+<hr />
+<p>Please do not hasitate to contact me if you have any questions or issues.</p>
+<div style="white-space: pre;">
+Best regards, 
+Per Brattaas, PhD 
+Bioinformatician 
+Center for Translational Genomics 
+Clinical Genomics Lund
+</div>

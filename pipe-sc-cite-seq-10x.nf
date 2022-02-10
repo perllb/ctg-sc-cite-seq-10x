@@ -24,12 +24,32 @@ index_rna = params.index_rna
 index_adt = params.index_adt
 demux = params.demux
 
+// delivery
+email = params.email
+autodeliver = params.autodeliver
+
 // Read and process CTG samplesheet 
 sheet = file(params.sheet)
 
+// New sheet for channels
+chsheet = file("$basedir/sample-sheet.nf.channel.csv")
+
+// Read and process sample sheet                                                                                                     
+all_lines = sheet.readLines()
+write_b = false // if next lines has sample info
+chsheet.text=""
+for ( line in all_lines ) { 
+    if ( write_b ) {
+        chsheet.append(line + "\n")
+	}
+    if (line.contains("[Data]")){
+        write_b = true
+    }
+}   
+
 // create new samplesheet in cellranger mkfastq IEM (--samplesheet) format. This will be used only for demultiplexing
-newsheet_rna = "$metadir/samplesheet.nf.sc-cite-seq-adt-10x.rna.csv"
-newsheet_adt = "$metadir/samplesheet.nf.sc-cite-seq-adt-10x.adt.csv"
+newsheet_rna = "$metadir/samplesheet.nf.sc-cite-seq-10x.rna.csv"
+newsheet_adt = "$metadir/samplesheet.nf.sc-cite-seq-10x.adt.csv"
 
 println "============================="
 println ">>> sc-cite-seq-adt-10x pipeline >>>"
@@ -41,6 +61,10 @@ println "> basedir		: $basedir "
 println "> runfolder		: $runfolder "
 println "> sample-sheet		: $sheet "
 println "> feature-ref          : $features "
+println ""
+println " - delivery "
+println "> email                : $email "
+println "> autodeliver?         : $autodeliver "
 println ""
 println " - demux settings " 
 println "> bcl2fastq-arg-rna    : '${b2farg_rna}' "
@@ -61,10 +85,18 @@ println "> metadata             : $metadir "
 println ""
 println "============================="
 
+// extracte delivery info
+Channel
+    .fromPath(chsheet)
+    .splitCsv(header:true)
+    .map { row -> tuple( row.Sample_Project) }
+    .unique()
+    .tap{delinfo}
+    .into { deliveryInfo; deliver_auto }
 
 // extract RNA samplesheet info
 Channel
-    .fromPath(sheet)
+    .fromPath(chsheet)
     .splitCsv(header:true)
     .map { row -> tuple( row.Sample_ID, row.Sample_Project, row.Sample_Species, row.Sample_Lib, row.Sample_Pair ) }
     .tap{infoall}
@@ -72,12 +104,15 @@ Channel
 
 // RNA Projects
 Channel
-    .fromPath(sheet)
+    .fromPath(chsheet)
     .splitCsv(header:true)
     .map { row -> row.Sample_Project }
     .unique()
     .tap{infoProject}
     .set { count_summarize  }
+println " > Delivery mails "
+println "[Project]"
+delinfo.subscribe { println "$it" }
 
 println " > Samples to process: "
 println "[Sample_ID,Sample_Project,Sample_Species,Sample_Lib,pair]"
@@ -87,13 +122,33 @@ println " > RNA Projects to process : "
 println "[Sample_Project]"
 infoProject.subscribe { println "Info Projects: $it" }
 
+/* Delivery processes */
+
+// Write delivery info file
+process delivery_info {
+
+	tag "$metaid"
+
+	input:
+	val projid from deliveryInfo
+
+	"""
+	mkdir -p ${outdir}
+	deliveryinfo="${outdir}/ctg-delivery.info.csv"
+	echo "projid,${projid}" > \$deliveryinfo
+	echo "email,${email}" >> \$deliveryinfo
+	echo "pipeline,sc-cite-seq-10x" >> \$deliveryinfo
+	"""
+}
+
+
 // Parse RNA samplesheet 
 process parsesheet_rna {
 
 	tag "$metaid"
 
 	input:
-	val sheet
+	val chsheet
 	val index_rna
 
 	output:
@@ -104,7 +159,7 @@ process parsesheet_rna {
 
 	"""
 mkdir -p $metadir
-cat $sheet | grep \',rna,\\|Lane,Sample_ID\' > tmp.sheet.RNA.csv
+cat $chsheet | grep \',rna,\\|Lane,Sample_ID\' > tmp.sheet.RNA.csv
 python $basedir/bin/ctg-parse-samplesheet.10x.py -s tmp.sheet.RNA.csv -o $newsheet_rna -i $index_rna
 rm tmp.sheet.RNA.csv
 	"""
@@ -127,8 +182,8 @@ process parsesheet_adt {
 
 	"""
 mkdir -p $metadir
-cat $sheet | grep \',adt\\|Lane,Sample_ID\' > tmp.sheet.ADT.csv
-python $basedir/bin/ctg-parse-samplesheet.10x.py -s tmp.sheet.ADT.csv -o $newsheet_adt -i $index_rna
+cat $chsheet | grep \',adt\\|Lane,Sample_ID\' > tmp.sheet.ADT.csv
+python $basedir/bin/ctg-parse-samplesheet.10x.py -s tmp.sheet.ADT.csv -o $newsheet_adt -i $index_adt
 rm tmp.sheet.ADT.csv
 	"""
 }
@@ -158,7 +213,7 @@ echo 'fastqs,sample,library_type' > \$libcsv
 # Print RNA entry
 echo '${fqdir}/rna/${projid},$sid,Gene Expression' >> \$libcsv
 # Get paired ADT sample
-adtid=\$(grep ',adt,$pair' $sheet | cut -f2 -d ',')
+adtid=\$(grep ',adt,$pair' $chsheet | cut -f2 -d ',')
 echo "${fqdir}/adt/${projid},\$adtid,Antibody Capture" >> \$libcsv
 
         """
@@ -187,7 +242,7 @@ else
 fi
 
 cellranger mkfastq \\
-	   --id=${metaid}_adt \\
+	   --id=${metaid}_rna \\
 	   --run=$runfolder \\
 	   --samplesheet=$rnasheet \\
 	   --jobmode=local \\
@@ -214,11 +269,22 @@ process mkfastq_adt {
 	demux == 'y'
 
 	"""
-if [ '$index_rna' == 'dual' ]; then
+if [ '$index_adt' == 'dual' ]; then
    indexarg='--filter-dual-index'
 else
    indexarg='--filter-single-index'
 fi
+
+indexLength=\$(bash ${basedir}/bin/getindexlength.sh $adtsheet) 
+echo indexLength
+echo \$indexLength
+# maske bases, based on length of index sequence
+maskbases=\"--use-bases-mask=Y28n*,I\${indexLength}n*,N10,Y90n*\"
+echo maskbases
+echo \$maskbases
+b2farg_adt=\"${b2farg_adt} \${maskbases}\"
+echo b2farg_adt
+echo \${b2farg_adt}
 
 cellranger mkfastq \\
 	   --id=${metaid}_adt \\
@@ -228,7 +294,7 @@ cellranger mkfastq \\
 	   --localmem=150 \\
 	   --output-dir ${fqdir}/adt \\
 	   \${indexarg} \\
-	   $b2farg_adt
+	   \${b2farg_adt} 
 """
 }
 
@@ -254,10 +320,10 @@ process count {
 	"""
 if [ $ref == "Human" ] || [ $ref == "human" ]
 then
-	genome="/projects/fs1/shared/references/hg38/cellranger/refdata-gex-GRCh38-2020-A"
+	genome=${params.human}
 elif [ $ref == "mouse" ] || [ $ref == "Mouse" ]
 then
-	genome="/projects/fs1/shared/references/mm10/cellranger/refdata-gex-mm10-2020-A"
+	genome=${params.mouse}
 elif [ $ref == "custom"  ] || [ $ref == "Custom" ] 
 then
 	genome=${params.custom_genome}
@@ -304,6 +370,8 @@ mkdir -p ${ctgqc}
 mkdir -p ${ctgqc}/web-summaries
 cp ${sid}/outs/web_summary.html ${ctgqc}/web-summaries/${sid}.web_summary.html
 
+# Copy metadata to outdir
+cp -r ${metadir} ${outdir}
 	"""
 
 }
@@ -423,7 +491,7 @@ done
 	"""
 }
 
-process multiqc_count_run {
+process multiqc_count {
 
 	tag "${metaid}"
 
@@ -438,7 +506,7 @@ process multiqc_count_run {
 # Edit adt stats.json to fetch stats in multiqc
 # Get flowcell id
 cd $fqdir/adt/Stats
-flow=\$(grep Flowcell Stats.json | cut -f4 -d\"\\"\")
+flow=\$(grep Flowcell Stats.json | cut -f4 -d\"\\"\")  
 sed "s/\$flow/\${flow}_ADT/g" Stats.json > tmp.txt
 mv tmp.txt Stats.json 
 
@@ -452,7 +520,9 @@ cp -r ${qcdir} ${ctgqc}
 
 }
 
+// """
 // Final process, when all is done: md5 recursively from output root folder
+
 process md5sum {
 
 	input:
@@ -460,6 +530,9 @@ process md5sum {
 	val projid from md5_fastqc_go.unique()
 	val x from md5_agg_go.collect()
 	
+	output:		
+	val "md5" into md5done	
+
 	"""
 # Remove Undetermined files!
 rm ${fqdir}/adt/Undetermined*
@@ -469,4 +542,27 @@ cd ${outdir}
 find -type f -exec md5sum '{}' \\; > ctg-md5.${projid}.txt
         """ 
 
+}
+
+
+// Deliver (sync to lfs and send email)! 
+process deliverAuto {
+
+	input:
+	val projid from deliver_auto
+	val x from md5done
+
+	output:
+	val "sent" into deliverDone
+
+	when:
+	autodeliver == "y"
+
+	"""
+	cd ${outdir}
+	cd .. 
+
+	bash $basedir/bin/ctg-deliver-sc-cite-seq-10x.sh -u per -d ${projid}
+
+	"""
 }
