@@ -38,15 +38,19 @@ The following files must be in the runfolder to start pipeline successfully.
 [Header]
 metaid,2021_067_citeseqTest
 antibodies,"ADT_A0574,ADT_A0052,ADT_A0394,ADT_A0161,ADT_A0063,ADT_A0576,ADT_A0054,ADT_A0048"
+email,per.a@med.lu.se
+autodeliver,y
 [Data]
-Lane,Sample_ID,index,Sample_Species,Sample_Project,Sample_Lib,Sample_Pair,email,autodeliver
-,EFS_21_022,SI-TT-D5,human,2021_067,rna,1,per.a@med.lu.se,1
-,con_21_023,SI-TT-E5,human,2021_067,rna,2,per.a@med.lu.se,1
-,rnaEFS_ADT,ACAGTG,human,2021_067,adt,1,per.a@med.lu.se,1
-,con_ADT,TGACCA,human,2021_067,adt,2,per.a@med.lu.se,1
+Lane,Sample_ID,index,Sample_Species,Sample_Project,Sample_Lib,Sample_Pair
+,EFS_21_022,SI-TT-D5,human,2021_067,rna,1
+,con_21_023,SI-TT-E5,human,2021_067,rna,2
+,rnaEFS_ADT,ACAGTG,human,2021_067,adt,1
+,con_ADT,TGACCA,human,2021_067,adt,2
 ```
 #### [Header] section
 Two optional entries. They can both be skipped, but recommended to use both:
+- `email` : Email to customer (or ctg staff) that should retrieve email with qc and deliver info upon completion of pipeline. Note: only @med.lu.se emails works.
+- `autodeliver` : set to `y` if email should be sent automatically upon completion. Otherwise, set to `n`.
 - `metaid` : optional. set to create working folders with this name. otherwise, it will be created based on runfolder name/date.
 - `antibodies` : optional. define antibodies used in experiment (across all samples). The sc-cite-seq-10x-driver will use these IDs to extract all info from cellranger_totalseq references, and create the "features" csv file needed in count analysis.
   - recommended if using antibodies that are defined in the totalSeq human cocktail csv files (/projects/fs1/shared/references/cellranger_totalseq). 
@@ -59,12 +63,12 @@ Two optional entries. They can both be skipped, but recommended to use both:
 
 #### [Data] section
 
- | Sample_ID | index | Sample_Species | Sample_Project | Sample_Lib | Sample_Pair | email | autodeliver |
- | --- | --- | --- | --- | --- | --- | --- | --- | 
- | Sr1 | SI-GA-D9 | human | 2022_022 | rna | 1 | per.a@med.lu.se | y |
- | Sr2 | SI-GA-H9 | mouse | 2022_022 | rna | 2 | per.a@med.lu.se | y |
- | Sadt1 | SI-GA-C9 | human | 2022_022 | adt | 1 | per.a@med.lu.se | y |
- | Sadt2 | SI-GA-C9 | mouse | 2022_022 | adt | 2 | per.a@med.lu.se | y |
+ | Sample_ID | index | Sample_Species | Sample_Project | Sample_Lib | Sample_Pair | 
+ | --- | --- | --- | --- | --- | --- | 
+ | Sr1 | SI-GA-D9 | human | 2022_022 | rna | 1 | 
+ | Sr2 | SI-GA-H9 | mouse | 2022_022 | rna | 2 | 
+ | Sadt1 | SI-GA-C9 | human | 2022_022 | adt | 1 | 
+ | Sadt2 | SI-GA-C9 | mouse | 2022_022 | adt | 2 | 
 
 - The nf-pipeline takes the following Columns from samplesheet to use in channels:
 
@@ -74,22 +78,22 @@ Two optional entries. They can both be skipped, but recommended to use both:
 - `Sample_Species` : Only 'human'/'mouse'/'custom' are accepted. If species is not human or mouse, set 'custom'. This custom reference genome has to be specified in the nextflow config file. See below how to edit the config file.
 - `Sample_Lib` : 'rna'/'adt'. Specify whether sample is RNA or ADT library. Note - even if it is and HTO experiment, use `adt` for HTO.
 - `Sample_Pair` : To match the rna sample with the corresponding adt sample. e.g. in the example above, sample 'Sr1' is the rna library, that should be matched with 'Sadt1' which is the adt library of the sample
-- `email` : Email to customer (or ctg staff) that should retrieve email with qc and deliver info upon completion of pipeline. Note: only @med.lu.se emails works.
-- `autodeliver` : set to `y` if email should be sent automatically upon completion. Otherwise, set to `n`.
 
 ### Samplesheet template
 
 #### Samplesheet name : `CTG_SampleSheet.sc-cite-seq-10x.csv`
 ```
 [Header]
+email,per.a@med.lu.se
+autodeliver,y
 metaid,2021_067_citeseqTest
 antibodies,"ADT_A0574,ADT_A0052,ADT_A0394,ADT_A0161,ADT_A0063,ADT_A0576,ADT_A0054,ADT_A0048"
 [Data]
 Lane,Sample_ID,index,Sample_Species,Sample_Project,Sample_Lib,Sample_Pair,email,autodeliver
-,EFS_21_022,SI-TT-D5,human,2021_067,rna,1,per.a@med.lu.se,1
-,con_21_023,SI-TT-E5,human,2021_067,rna,2,per.a@med.lu.se,1
-,rnaEFS_ADT,ACAGTG,human,2021_067,adt,1,per.a@med.lu.se,1
-,con_ADT,TGACCA,human,2021_067,adt,2,per.a@med.lu.se,1
+,EFS_21_022,SI-TT-D5,human,2021_067,rna,1
+,con_21_023,SI-TT-E5,human,2021_067,rna,2
+,rnaEFS_ADT,ACAGTG,human,2021_067,adt
+,con_ADT,TGACCA,human,2021_067,adt,2
 ```
 
 ### 2. Feature reference (feature.ref.csv)
