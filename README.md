@@ -49,7 +49,7 @@ Lane,Sample_ID,index,Sample_Species,Sample_Project,Sample_Lib,Sample_Pair
 ```
 #### [Header] section
 Two optional entries. They can both be skipped, but recommended to use both:
-- `email` : Email to customer (or ctg staff) that should retrieve email with qc and deliver info upon completion of pipeline. Note: only @*lu.se emails works.
+- `email` : Email to customer (or ctg staff) that should retrieve email with qc and deliver info upon completion of pipeline. Note: only lu emails works (e.g. @med.lu.se or @lth.se.
 - `autodeliver` : set to `y` if email should be sent automatically upon completion. Otherwise, set to `n`.
 - `metaid` : optional. set to create working folders with this name. otherwise, it will be created based on runfolder name/date.
 - `antibodies` : optional. define antibodies used in experiment (across all samples). The sc-cite-seq-10x-driver will use these IDs to extract all info from cellranger_totalseq references, and create the "features" csv file needed in count analysis.
