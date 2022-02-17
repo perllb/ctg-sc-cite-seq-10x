@@ -43,7 +43,7 @@ autodeliver,y
 Lane,Sample_ID,index,Sample_Species,Sample_Project,Sample_Lib,Sample_Pair
 ,EFS_21_022,SI-TT-D5,human,2021_067,rna,1
 ,con_21_023,SI-TT-E5,human,2021_067,rna,2
-,rnaEFS_ADT,ACAGTG,human,2021_067,adt,1
+,EFS_ADT,ACAGTG,human,2021_067,adt,1
 ,con_ADT,TGACCA,human,2021_067,adt,2
 ```
 #### [Header] section
@@ -91,7 +91,7 @@ antibodies,"ADT_A0574,ADT_A0052,ADT_A0394,ADT_A0161,ADT_A0063,ADT_A0576,ADT_A005
 Lane,Sample_ID,index,Sample_Species,Sample_Project,Sample_Lib,Sample_Pair,email,autodeliver
 ,EFS_21_022,SI-TT-D5,human,2021_067,rna,1
 ,con_21_023,SI-TT-E5,human,2021_067,rna,2
-,rnaEFS_ADT,ACAGTG,human,2021_067,adt
+,EFS_ADT,ACAGTG,human,2021_067,adt
 ,con_ADT,TGACCA,human,2021_067,adt,2
 ```
 
