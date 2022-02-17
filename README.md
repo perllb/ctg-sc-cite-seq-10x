@@ -1,17 +1,17 @@
 # ctg-sc-cite-seq-10x 
-## Nextflow pipeline for processing of 10x chromium cite-seq with rna+(adt/hto) data with cellranger. 
+## Nextflow pipeline for processing of 10x cite-seq. RNA+(ADT/HTO) data with cellranger. 
 
 - Run one project at a time only
-- Analyze 10x cite-seq in one pipeline. 
-- Demux -> cellranger -> QC
+- Demux -> cellranger -> QC -> delivery
 - Supports ADT/HTO and RNA libraries sequenced on same flowcell.
-- Supports different indexing of RNA and ADT/HTO library (e.g. RNA dual and ADT/HTO single). See `Handle dual and single indexing in same sequencing run` for more info.
-- It requires TotalSeq antibody IDs used for ADT/HTO in experiment, and creates feature reference csv. See `2. Feature reference (feature.ref.csv)` and `1. Samplesheet` sections below.
-
+- Supports different indexing of RNA and ADT/HTO library (e.g. RNA dual 10bp and ADT/HTO single 6bp). See `Handle dual and single indexing in same sequencing run` for more info.
+- TotalSeq feature IDs used for ADT/HTO in experiment can be specified in samplesheet. Pipeline creates feature reference csv from IDs. See `2. Feature reference (feature.ref.csv)` and `1. Samplesheet` sections below.
+- If antibody features are not in reference, a custom feature-ref csv can be created and specified with drivers -f tag.
+- Currently, BioLegend TotalSeq ADT A,B and C as well as TotalSeq HTO A are in references, located at `/projects/fs1/shared/references/cellranger_totalseq`.
 
 
 1. Clone and build the Singularity container for this pipeline: https://github.com/perllb/ctg-sc-cite-seq-10x/tree/master/container
-2. Prepare the feature ref csv. See section `Feature reference` below
+2. If not using reference totalSeq antibodies, prepare the feature ref csv. See section `Feature reference` below
 3. Edit your samplesheet to match the example samplesheet. See section `SampleSheet` below
 4. Edit the nextflow.config file to fit your project and system. 
 5. Run pipeline 
@@ -26,12 +26,11 @@ nohup nextflow run pipe-sc-cite-seq-10x.nf > log.pipe-sc-cite-seq-10x.txt &
 The following files must be in the runfolder to start pipeline successfully.
 
 1. Samplesheet  (see `SampleSheet` section below)
-2. Feature reference csv (see `Feature Reference` section below)
+2. (OPTIONAL): Feature reference csv (see `Feature Reference` section below) if not using reference features on lsens4 `/projects/fs1/shared/references/cellranger_totalseq`.
 
 ### 1. Samplesheet (CTG_SampleSheet.sc-cite-seq-10x.csv):
 
-- Can have other names than CTG_SampleSheet.**sc-cite-seq-10x**.csv
-- Then specify which sheet when starting driver: e.g. `sc-cite-seq-10x-driver -s CTG_SampleSheet.sc-cite-seq-10x.2022_102.csv`
+- Can have other names than CTG_SampleSheet.**sc-cite-seq-10x**.csv - then specify which sheet when starting driver: e.g. `sc-cite-seq-10x-driver -s CTG_SampleSheet.2022_102.csv`
 
 #### Example sheet
 ```
@@ -100,7 +99,7 @@ Lane,Sample_ID,index,Sample_Species,Sample_Project,Sample_Lib,Sample_Pair,email,
 
 #### NB: 
 - Recommended is to use the `antibodies,` declarartion in the header: see examples above. 
-- The references are found in /projects/fs1/shared/references/cellranger_totalseq. 
+- The references are found in `/projects/fs1/shared/references/cellranger_totalseq`. 
 - The IDs must match "id" fields in these references
 - The driver will use these ids to extract the information needed for the feature.ref.csv file 
 - The driver will create the feature ref file and add it to nextflow.config to use in pipeline.
