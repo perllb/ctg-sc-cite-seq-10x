@@ -144,6 +144,7 @@ CD45,CD45,R2,^(BC),TCCCTTGCGATTTAC,Antibody Capture
 
 Cellranger version: cellranger v6.0 
 
+* `delivery_info`: Generates the delivery info csv file needed to create delivery email (see deliverAuto below)
 * `parse samplesheets`: Creates samplesheets (one for RNA, and one for ADT/HTO) for demux based on the input samplesheet. 
 * `generate library csv`: Creates library.csv file based on input samplesheet. One .csv per matched RNA and ADT/HTO sample.
 * `Demultiplexing` (cellranger mkfastq): Converts raw basecalls to fastq, and demultiplex samples based on index (https://support.10xgenomics.com/single-cell-gene-expression/software/pipelines/6.0/using/mkfastq). Does this separately for RNA and ADT/HTO (since they often have different index types (dual/single)
@@ -153,6 +154,8 @@ Cellranger version: cellranger v6.0
 * `Cellranger count metrics` (bin/ctg-sc-cite-seq-count-metrics-concat.py): Collects main count metrics (#cells and #reads/cell etc.) from each sample and collect in table (**UPDATE**)
 * `multiQC`: Compile fastQC and cellranger count metrics in multiqc report
 * `md5sum`: md5sum of all generated files
+* `deliverAuto`: executes delivery script in bin/ that edits template html delivery email, creates user, pass and executes mutt command to send email
+* `pipe_done`: marks pipeline as done (puts ctg.sc-cite-seq-10x.$projid.done in runfolder and logs)
 
 
 ## Handle dual and single indexing in same sequencing run
